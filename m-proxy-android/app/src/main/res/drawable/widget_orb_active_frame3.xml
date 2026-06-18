@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Active VPN Orb Wave Animation - Frame 3 (Largest) -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Outer green glow (large) -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#2800FF88" />
+        </shape>
+    </item>
+
+    <!-- Outer cyan glow (large) -->
+    <item
+        android:top="6dp"
+        android:bottom="6dp"
+        android:left="6dp"
+        android:right="6dp">
+        <shape android:shape="oval">
+            <solid android:color="#3800E5FF" />
+        </shape>
+    </item>
+
+    <!-- Bright active ring -->
+    <item
+        android:top="16dp"
+        android:bottom="16dp"
+        android:left="16dp"
+        android:right="16dp">
+        <shape android:shape="oval">
+            <solid android:color="#FF00E5FF" />
+        </shape>
+    </item>
+
+    <!-- Inner green ring -->
+    <item
+        android:top="18dp"
+        android:bottom="18dp"
+        android:left="18dp"
+        android:right="18dp">
+        <shape android:shape="oval">
+            <solid android:color="#FF00FF66" />
+        </shape>
+    </item>
+
+    <!-- Inner dark core -->
+    <item
+        android:top="22dp"
+        android:bottom="22dp"
+        android:left="22dp"
+        android:right="22dp">
+        <shape android:shape="oval">
+            <solid android:color="#E6060C18" />
+        </shape>
+    </item>
+
+</layer-list>

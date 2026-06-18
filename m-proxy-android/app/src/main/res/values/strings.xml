@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">M-Proxy VPN</string>
+    <string name="vpn_notification_channel">M-Proxy VPN Service</string>
+    <string name="vpn_notification_title">M-Proxy VPN Aktif</string>
+    <string name="vpn_notification_text">VPN bağlantısı aktif</string>
+    <color name="ic_launcher_background">#000000</color>
+    <string name="widget_description">M-Proxy VPN durum widget\'ı — IP, kullanıcı, trafik ve kalan süreyi gösterir</string>
+</resources>

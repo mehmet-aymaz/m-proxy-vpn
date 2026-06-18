@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PASİF durum için soluk gri/kırmızımsı glow halkası -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- En dış glow katmanı (soluk) -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#0AFFFFFF" />
+        </shape>
+    </item>
+
+    <!-- Dış glow halkası -->
+    <item
+        android:top="6dp"
+        android:bottom="6dp"
+        android:left="6dp"
+        android:right="6dp">
+        <shape android:shape="oval">
+            <solid android:color="#15FFFFFF" />
+        </shape>
+    </item>
+
+    <!-- Gri kenarlık halkası -->
+    <item
+        android:top="12dp"
+        android:bottom="12dp"
+        android:left="12dp"
+        android:right="12dp">
+        <shape android:shape="oval">
+            <solid android:color="#603D5A72" />
+        </shape>
+    </item>
+
+    <!-- Koyu iç kenarlık -->
+    <item
+        android:top="14dp"
+        android:bottom="14dp"
+        android:left="14dp"
+        android:right="14dp">
+        <shape android:shape="oval">
+            <solid android:color="#402D4A62" />
+        </shape>
+    </item>
+
+    <!-- İç koyu daire (arka plan) -->
+    <item
+        android:top="18dp"
+        android:bottom="18dp"
+        android:left="18dp"
+        android:right="18dp">
+        <shape android:shape="oval">
+            <solid android:color="#E6060C18" />
+        </shape>
+    </item>
+
+</layer-list>

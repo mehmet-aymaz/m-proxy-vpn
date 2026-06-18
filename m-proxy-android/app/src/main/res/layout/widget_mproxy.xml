@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    M-Proxy VPN Ana Ekran Widget Layout
+    - Üst panel: Logo ve M-Proxy VPN ismi
+    - Alt panel: Kutular ve Orb (Tam yatay ortalı)
+    - Dalgalanma efekti iptal, Liquid Glass tasarımı
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_bg"
+    android:padding="12dp">
+
+    <!-- Üst Satır: Logo ve İsim -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <ImageView
+            android:id="@+id/widget_logo_icon"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@mipmap/mproxy_vpn_icon"
+            android:layout_marginEnd="6dp"
+            android:scaleType="fitCenter" />
+
+        <TextView
+            android:id="@+id/widget_app_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="M-Proxy VPN"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.1" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <!-- Hotspot Kartı (Bağlantı varken görünecek) -->
+        <LinearLayout
+            android:id="@+id/widget_hotspot_card"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:background="@drawable/widget_info_card_bg"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/widget_hotspot_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hotspot Başlat"
+                android:textColor="#FBC531"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Alt Satır: Kutular ve Orb Yan Yana (Tam Hizalı) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Kutular (Sol Panel) -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_vertical">
+
+            <!-- Üst Satır: IP Adresi + Kullanıcı -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:layout_marginBottom="4dp">
+
+                <!-- Kart 1: IP Adresi -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:orientation="vertical"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/widget_info_card_bg"
+                    android:padding="6dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:src="@drawable/widget_ic_ip"
+                            android:layout_marginEnd="4dp" />
+                        <TextView
+                            android:id="@+id/widget_ip_label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="IP Adresi"
+                            android:textColor="#94A3B8"
+                            android:textSize="9sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/widget_ip_value"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="–"
+                        android:textColor="#00E5FF"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:ellipsize="end"
+                        android:singleLine="true" />
+                </LinearLayout>
+
+                <!-- Kart 2: Kullanıcı -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/widget_info_card_bg"
+                    android:padding="6dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:src="@drawable/widget_ic_user"
+                            android:layout_marginEnd="4dp" />
+                        <TextView
+                            android:id="@+id/widget_user_label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Kullanıcı"
+                            android:textColor="#94A3B8"
+                            android:textSize="9sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/widget_user_value"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="–"
+                        android:textColor="#A855F7"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:ellipsize="end"
+                        android:singleLine="true" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Alt Satır: Toplam Trafik + Kalan Süre -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+
+                <!-- Kart 3: Toplam Trafik -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:orientation="vertical"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/widget_info_card_bg"
+                    android:padding="6dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:src="@drawable/widget_ic_traffic"
+                            android:layout_marginEnd="4dp" />
+                        <TextView
+                            android:id="@+id/widget_traffic_label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Toplam Trafik"
+                            android:textColor="#94A3B8"
+                            android:textSize="9sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/widget_traffic_value"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="–"
+                        android:textColor="#00FF66"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:ellipsize="end"
+                        android:singleLine="true" />
+                </LinearLayout>
+
+                <!-- Kart 4: Kalan Süre -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/widget_info_card_bg"
+                    android:padding="6dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:src="@drawable/widget_ic_time"
+                            android:layout_marginEnd="4dp" />
+                        <TextView
+                            android:id="@+id/widget_time_label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Kalan Süre"
+                            android:textColor="#94A3B8"
+                            android:textSize="9sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/widget_time_value"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="SÜRESİZ"
+                        android:textColor="#FBC531"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:ellipsize="end"
+                        android:singleLine="true" />
+                </LinearLayout>
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+        <!-- Orb ve MS Balonu (Sağ Panel) -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginStart="10dp"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <FrameLayout
+                android:id="@+id/widget_orb_click_area"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center">
+
+                <!-- Arka Plan (İç cam, hep sabit koyu) -->
+                <ImageView
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_orb_liquid"
+                    android:scaleType="fitXY" />
+
+                <!-- Çerçeve (Boru - Bağlantıda Rengi Değişecek) -->
+                <ImageView
+                    android:id="@+id/widget_orb_border"
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_orb_border_ring"
+                    android:scaleType="fitXY" />
+
+                <!-- İçerik: Güç Düğmesi + Durum Yazısı -->
+                <LinearLayout
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    android:layout_gravity="center"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <ImageView
+                        android:id="@+id/widget_status_icon"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:src="@drawable/widget_ic_power_liquid"
+                        android:tint="#80FFFFFF" />
+
+                    <TextView
+                        android:id="@+id/widget_status_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="PASİF"
+                        android:textColor="#80FFFFFF"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.1" />
+
+                </LinearLayout>
+            </FrameLayout>
+
+
+        </LinearLayout>
+
+    </LinearLayout>
+</LinearLayout>

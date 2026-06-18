@@ -1,0 +1,20 @@
+# IDEs and Editors
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Build outputs
+build/
+bin/
+
+# Temporary / Log files
+*.log
+*.txt
+*.png
+!m-proxy-android/app/src/main/assets/www/**/*.png
