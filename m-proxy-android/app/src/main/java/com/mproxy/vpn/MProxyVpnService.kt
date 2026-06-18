@@ -188,7 +188,7 @@ class MProxyVpnService : VpnService() {
             } catch (_: Throwable) {}
             clearSavedVlessLink()
             // Elle durdurunca hotspot yeniden başlatma bayraklarını temizle
-            getSharedPreferences("mproxy_vpn_prefs", Context.MODE_PRIVATE)
+            SecurityUtils.getEncryptedPrefs(this, "mproxy_vpn_prefs")
                 .edit()
                 .remove("restart_hotspot")
                 .remove("hotspot_was_active")
@@ -199,12 +199,12 @@ class MProxyVpnService : VpnService() {
     }
 
     private fun getSavedVlessLink(): String? {
-        return getSharedPreferences("mproxy_vpn_prefs", Context.MODE_PRIVATE)
+        return SecurityUtils.getEncryptedPrefs(this, "mproxy_vpn_prefs")
             .getString("last_vless_link", null)
     }
 
     private fun saveVlessLink(vlessLink: String) {
-        getSharedPreferences("mproxy_vpn_prefs", Context.MODE_PRIVATE)
+        SecurityUtils.getEncryptedPrefs(this, "mproxy_vpn_prefs")
             .edit()
             .putString("last_vless_link", vlessLink)
             .putString("persistent_vless_link", vlessLink)
@@ -213,7 +213,7 @@ class MProxyVpnService : VpnService() {
     }
 
     private fun clearSavedVlessLink() {
-        getSharedPreferences("mproxy_vpn_prefs", Context.MODE_PRIVATE)
+        SecurityUtils.getEncryptedPrefs(this, "mproxy_vpn_prefs")
             .edit()
             .remove("last_vless_link")
             .apply()
@@ -230,7 +230,7 @@ class MProxyVpnService : VpnService() {
         }
         // Not: hotspot_was_active zaten HotspotManager tarafından SharedPrefs'e kaydedildi.
         // Ekstra bir şey yapmaya gerek yok.
-        Log.d(TAG, "onTaskRemoved: VPN will restart. hotspot_was_active=${getSharedPreferences("mproxy_vpn_prefs", Context.MODE_PRIVATE).getBoolean("hotspot_was_active", false)}")
+        Log.d(TAG, "onTaskRemoved: VPN will restart. hotspot_was_active=${SecurityUtils.getEncryptedPrefs(this, "mproxy_vpn_prefs").getBoolean("hotspot_was_active", false)}")
         
         // VLESS link'i de içeren restart intent'i hazırla
         val restartIntent = Intent(applicationContext, this.javaClass).apply {
@@ -420,7 +420,7 @@ class MProxyVpnService : VpnService() {
     }
 
     private fun scheduleHotspotRestartIfNeeded() {
-        val prefs = getSharedPreferences("mproxy_vpn_prefs", Context.MODE_PRIVATE)
+        val prefs = SecurityUtils.getEncryptedPrefs(this, "mproxy_vpn_prefs")
         // Hem eski hem yeni bayrağı kontrol et
         val shouldRestart = prefs.getBoolean("hotspot_was_active", false)
                          || prefs.getBoolean("restart_hotspot", false)

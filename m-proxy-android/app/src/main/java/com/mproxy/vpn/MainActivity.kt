@@ -61,6 +61,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // APK Signature Verification (Anti-tampering)
+        if (!SignatureVerifier.verify(this)) {
+            Toast.makeText(this, "Güvenlik İhlali: Uygulama bütünlüğü doğrulanamadı!", Toast.LENGTH_LONG).show()
+            finishAffinity()
+            return
+        }
+
         // Edge-to-Edge setup
         WindowCompat.setDecorFitsSystemWindows(window, false)
         
@@ -162,6 +169,9 @@ class MainActivity : AppCompatActivity() {
 
                         val urlObj = URL(url)
                         val urlConnection = urlObj.openConnection() as HttpURLConnection
+                        if (urlConnection is javax.net.ssl.HttpsURLConnection) {
+                            urlConnection.sslSocketFactory = PinningTrustManager.getSSLSocketFactory()
+                        }
                         urlConnection.requestMethod = request.method
                         urlConnection.connectTimeout = 10000
                         urlConnection.readTimeout = 10000

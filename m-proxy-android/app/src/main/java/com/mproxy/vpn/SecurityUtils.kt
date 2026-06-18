@@ -13,10 +13,28 @@ import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 import java.util.concurrent.ConcurrentHashMap
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKeys
 
 
 object SecurityUtils {
     private const val KEY = 0x5A.toByte()
+
+    fun getEncryptedPrefs(context: Context, name: String): android.content.SharedPreferences {
+        return try {
+            val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+            EncryptedSharedPreferences.create(
+                name,
+                masterKeyAlias,
+                context,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            Log.e("SecurityUtils", "Failed to create EncryptedSharedPreferences, falling back to standard", e)
+            context.getSharedPreferences(name, Context.MODE_PRIVATE)
+        }
+    }
 
     fun decode(base64Input: String): String {
         return try {

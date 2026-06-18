@@ -14,7 +14,7 @@ object ProfileStorage {
 
     fun saveProfile(context: Context, uuid: String, remark: String, vlessLink: String? = null) {
         try {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val prefs = SecurityUtils.getEncryptedPrefs(context, PREFS_NAME)
             val editor = prefs.edit()
                 .putString(KEY_UUID, uuid)
                 .putString(KEY_REMARK, remark)
@@ -30,7 +30,7 @@ object ProfileStorage {
 
     fun getUuid(context: Context): String {
         return try {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val prefs = SecurityUtils.getEncryptedPrefs(context, PREFS_NAME)
             prefs.getString(KEY_UUID, "") ?: ""
         } catch (e: Exception) {
             Log.e(TAG, "Error getting cached UUID", e)
@@ -40,7 +40,7 @@ object ProfileStorage {
 
     fun getRemark(context: Context): String {
         return try {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val prefs = SecurityUtils.getEncryptedPrefs(context, PREFS_NAME)
             prefs.getString(KEY_REMARK, "") ?: ""
         } catch (e: Exception) {
             Log.e(TAG, "Error getting cached Remark", e)
@@ -50,7 +50,7 @@ object ProfileStorage {
 
     fun getVlessLink(context: Context): String {
         return try {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val prefs = SecurityUtils.getEncryptedPrefs(context, PREFS_NAME)
             prefs.getString(KEY_VLESS_LINK, "") ?: ""
         } catch (e: Exception) {
             Log.e(TAG, "Error getting cached VLESS link", e)

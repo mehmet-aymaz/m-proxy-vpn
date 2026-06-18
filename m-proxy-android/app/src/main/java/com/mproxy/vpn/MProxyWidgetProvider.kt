@@ -85,7 +85,7 @@ class MProxyWidgetProvider : AppWidgetProvider() {
             val uuid = ProfileStorage.getUuid(context)
 
             // Önce cache'den yükle (API başarısız olursa geri dönebilsin)
-            val prefs = context.getSharedPreferences(PREFS_CACHE, Context.MODE_PRIVATE)
+            val prefs = SecurityUtils.getEncryptedPrefs(context, PREFS_CACHE)
 
             var ipAddress = "–"
             var userName = "–"
@@ -202,7 +202,7 @@ class MProxyWidgetProvider : AppWidgetProvider() {
                 }
             }
 
-            val vpnPrefs = context.getSharedPreferences("mproxy_vpn_prefs", Context.MODE_PRIVATE)
+            val vpnPrefs = SecurityUtils.getEncryptedPrefs(context, "mproxy_vpn_prefs")
             val isHotspotActive = HotspotManager.hotspotType != null || vpnPrefs.getBoolean("hotspot_was_active", false)
 
             return WidgetData(
@@ -236,6 +236,9 @@ class MProxyWidgetProvider : AppWidgetProvider() {
             return try {
                 val url = URL("$API_BASE/api?uuid=${uuid.trim()}")
                 conn = url.openConnection() as HttpURLConnection
+                if (conn is javax.net.ssl.HttpsURLConnection) {
+                    conn.sslSocketFactory = PinningTrustManager.getSSLSocketFactory()
+                }
                 conn.connectTimeout = 8000
                 conn.readTimeout = 8000
                 conn.requestMethod = "GET"
@@ -431,13 +434,13 @@ class MProxyWidgetProvider : AppWidgetProvider() {
         Log.d(TAG, "onAppWidgetOptionsChanged - widgetId: $appWidgetId, minWidth: $minWidth, isSmall: $isSmall")
         
         // Sadece font/boyut değişikliği için API beklemeden cache'den oku
-        val prefs = context.getSharedPreferences(PREFS_CACHE, Context.MODE_PRIVATE)
+        val prefs = SecurityUtils.getEncryptedPrefs(context, PREFS_CACHE)
         val ipAddress = prefs.getString("cached_ip", "–") ?: "–"
         val userName = prefs.getString("cached_user", "–") ?: "–"
         val totalTraffic = prefs.getString("cached_traffic", "–") ?: "–"
         val remainingTime = prefs.getString("cached_time", "SÜRESİZ") ?: "SÜRESİZ"
         val isVpnActive = MProxyVpnService.isActive
-        val vpnPrefs = context.getSharedPreferences("mproxy_vpn_prefs", Context.MODE_PRIVATE)
+        val vpnPrefs = SecurityUtils.getEncryptedPrefs(context, "mproxy_vpn_prefs")
         val isHotspotActive = HotspotManager.hotspotType != null || vpnPrefs.getBoolean("hotspot_was_active", false)
         
         val data = WidgetData(isVpnActive, ipAddress, userName, totalTraffic, remainingTime, "-- ms", 0xFF00E5FF.toInt(), isHotspotActive)
@@ -493,7 +496,7 @@ class MProxyWidgetProvider : AppWidgetProvider() {
                 // VLESS linkini al (ProfileStorage'dan veya mproxy_vpn_prefs'ten)
                 var vlessLink = ProfileStorage.getVlessLink(context)
                 if (vlessLink.isEmpty()) {
-                    vlessLink = context.getSharedPreferences("mproxy_vpn_prefs", Context.MODE_PRIVATE)
+                    vlessLink = SecurityUtils.getEncryptedPrefs(context, "mproxy_vpn_prefs")
                         .getString("persistent_vless_link", "") ?: ""
                 }
 
@@ -518,7 +521,7 @@ class MProxyWidgetProvider : AppWidgetProvider() {
                 android.widget.Toast.makeText(context, "Hotspot kullanmak için önce VPN bağlantısı kurmalısınız.", android.widget.Toast.LENGTH_SHORT).show()
                 return
             }
-            val vpnPrefs = context.getSharedPreferences("mproxy_vpn_prefs", Context.MODE_PRIVATE)
+            val vpnPrefs = SecurityUtils.getEncryptedPrefs(context, "mproxy_vpn_prefs")
             val isCurrentlyActive = HotspotManager.hotspotType != null || vpnPrefs.getBoolean("hotspot_was_active", false)
             if (isCurrentlyActive) {
                 HotspotManager.stopHotspot(context)

@@ -137,7 +137,9 @@ class WebServerHandler(BaseHTTPRequestHandler):
     # ── OPTIONS ───────────────────────────────────────────────────────────────
     def do_OPTIONS(self):
         self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
+        origin = self.headers.get('Origin')
+        if origin and (origin == "https://wmehmet.web.tr" or origin.endswith(".wmehmet.web.tr")):
+            self.send_header('Access-Control-Allow-Origin', origin)
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, HEAD, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
@@ -147,10 +149,18 @@ class WebServerHandler(BaseHTTPRequestHandler):
         parsed_url = urllib.parse.urlparse(self.path)
         if parsed_url.path == '/upload':
             content_length = int(self.headers.get('Content-Length', 0))
+            # Limit reading to 10MB to prevent DoS (bandwidth/memory exhaustion)
+            if content_length > 10 * 1024 * 1024:
+                self.send_response(413)
+                self.end_headers()
+                self.wfile.write(b'{"error": "Payload too large"}')
+                return
             self.rfile.read(content_length)
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
+            origin = self.headers.get('Origin')
+            if origin and (origin == "https://wmehmet.web.tr" or origin.endswith(".wmehmet.web.tr")):
+                self.send_header('Access-Control-Allow-Origin', origin)
             self.end_headers()
             self.wfile.write(b'{"ok": true}')
         else:
@@ -165,7 +175,9 @@ class WebServerHandler(BaseHTTPRequestHandler):
         if parsed_url.path == '/ping':
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
+            origin = self.headers.get('Origin')
+            if origin and (origin == "https://wmehmet.web.tr" or origin.endswith(".wmehmet.web.tr")):
+                self.send_header('Access-Control-Allow-Origin', origin)
             self.end_headers()
             self.wfile.write(b'{"ok": true}')
 
@@ -177,7 +189,9 @@ class WebServerHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-type', 'application/octet-stream')
             self.send_header('Content-Length', str(size))
-            self.send_header('Access-Control-Allow-Origin', '*')
+            origin = self.headers.get('Origin')
+            if origin and (origin == "https://wmehmet.web.tr" or origin.endswith(".wmehmet.web.tr")):
+                self.send_header('Access-Control-Allow-Origin', origin)
             self.send_header('Cache-Control', 'no-store')
             self.end_headers()
             
@@ -262,7 +276,9 @@ class WebServerHandler(BaseHTTPRequestHandler):
 
             self.send_response(200)
             self.send_header('Content-type', 'application/json; charset=utf-8')
-            self.send_header('Access-Control-Allow-Origin', self.headers.get('Origin', '*'))
+            origin = self.headers.get('Origin')
+            if origin and (origin == "https://wmehmet.web.tr" or origin.endswith(".wmehmet.web.tr")):
+                self.send_header('Access-Control-Allow-Origin', origin)
             self.send_header('Access-Control-Allow-Methods', 'GET, POST, HEAD, OPTIONS')
             self.send_header('Access-Control-Allow-Headers', 'Content-Type')
             self.end_headers()
