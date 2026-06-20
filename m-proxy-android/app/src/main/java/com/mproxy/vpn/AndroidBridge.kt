@@ -54,6 +54,13 @@ class AndroidBridge(private val context: Context) {
         Log.d("AndroidBridge", "requestVpnPermission bridge called, vlessLink length=${vlessLink.length}")
         ProfileStorage.extractAndSaveProfile(context, vlessLink)
         val netType = detectNetworkType()
+        if (netType == "YOK") {
+            mainHandler.post {
+                android.widget.Toast.makeText(context, "İnternet bağlantısı yok!", android.widget.Toast.LENGTH_LONG).show()
+                reportError("İnternet bağlantısı yok!")
+            }
+            return
+        }
         if (netType == "WIFI") {
             mainHandler.post {
                 android.widget.Toast.makeText(context, "Wi-Fi bağlantısı aktifken VPN başlatılamaz! Lütfen mobil veriye geçin.", android.widget.Toast.LENGTH_LONG).show()
@@ -73,6 +80,13 @@ class AndroidBridge(private val context: Context) {
         Log.d("AndroidBridge", "startVpn bridge called, vlessLink length=${vlessLink.length}")
         ProfileStorage.extractAndSaveProfile(context, vlessLink)
         val netType = detectNetworkType()
+        if (netType == "YOK") {
+            mainHandler.post {
+                android.widget.Toast.makeText(context, "İnternet bağlantısı yok!", android.widget.Toast.LENGTH_LONG).show()
+                reportError("İnternet bağlantısı yok!")
+            }
+            return
+        }
         if (netType == "WIFI") {
             mainHandler.post {
                 android.widget.Toast.makeText(context, "Wi-Fi bağlantısı aktifken VPN başlatılamaz! Lütfen mobil veriye geçin.", android.widget.Toast.LENGTH_LONG).show()
@@ -207,7 +221,7 @@ class AndroidBridge(private val context: Context) {
                     val finalIp = ip ?: "---.---.---.---"
                     // Widget cache'e de yaz — senkronizasyon için
                     if (finalIp != "---.---.---.---") {
-                        context.getSharedPreferences("mproxy_widget_cache", Context.MODE_PRIVATE)
+                        SecurityUtils.getEncryptedPrefs(context, "mproxy_widget_cache")
                             .edit().putString("cached_ip", finalIp).apply()
                     }
                     postToWeb("window.onIPResult?.('$finalIp')")
@@ -217,7 +231,7 @@ class AndroidBridge(private val context: Context) {
                     val ip = fetchPublicIP(false) ?: "---.---.---.---"
                     // Widget cache'e de yaz
                     if (ip != "---.---.---.---") {
-                        context.getSharedPreferences("mproxy_widget_cache", Context.MODE_PRIVATE)
+                        SecurityUtils.getEncryptedPrefs(context, "mproxy_widget_cache")
                             .edit().putString("cached_ip", ip).apply()
                     }
                     postToWeb("window.onIPResult?.('$ip')")
@@ -585,6 +599,11 @@ class AndroidBridge(private val context: Context) {
 
     @JavascriptInterface
     fun startHotspot(ssid: String, password: String) {
+        val prefs = SecurityUtils.getEncryptedPrefs(context, "mproxy_vpn_prefs")
+        prefs.edit()
+            .putString("wifi_direct_ssid", ssid)
+            .putString("wifi_direct_password", password)
+            .apply()
         HotspotManager.startHotspot(context, ssid, password)
     }
 

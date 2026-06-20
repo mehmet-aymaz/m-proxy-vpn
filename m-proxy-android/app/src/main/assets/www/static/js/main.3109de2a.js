@@ -14393,6 +14393,74 @@
       (0, r.useEffect)(() => {
         Sn.current = hn;
       }, [hn]));
+    (0, r.useEffect)(() => {
+      try {
+        const cached = localStorage.getItem("cached_vless_data");
+        if (cached) {
+          const data = JSON.parse(cached);
+          if (data && data.links && data.links.length > 0) {
+            const parsedServers = data.links.map((e) => {
+              const t = (e.remark || "").toLowerCase();
+              let n = e.remark || "Port ".concat(e.port),
+                r = "VPN",
+                a = k,
+                l = "#06b6d4";
+              return (
+                t.includes("whatsapp")
+                  ? ((n = "WHATSAPP SINIRSIZ PAKET"),
+                    (r = "WHATSAPP"),
+                    (a = q),
+                    (l = "#25D366"))
+                  : t.includes("youtube")
+                    ? ((n = "YOUTUBE SINIRSIZ PAKET"),
+                      (r = "YOUTUBE"),
+                      (a = Q),
+                      (l = "#FF0000"))
+                  : t.includes("instagram")
+                    ? ((n = "INSTAGRAM SINIRSIZ PAKET"),
+                      (r = "INSTAGRAM"),
+                      (a = K),
+                      (l = "#E1306C"))
+                    : t.includes("tiktok")
+                      ? ((n = "TIKTOK SINIRSIZ PAKET"),
+                        (r = "TIKTOK"),
+                        (a = Y),
+                        (l = "#00f2fe"))
+                      : t.includes("telegram") &&
+                        ((r = "TELEGRAM"), (l = "#0088cc")),
+                {
+                  id: e.port,
+                  name: n,
+                  shortName: r,
+                  port: e.port,
+                  link: e.link,
+                  IconComponent: a,
+                  color: l,
+                }
+              );
+            });
+            dt(parsedServers);
+            g((current) => {
+              if (current) {
+                const found = parsedServers.find((s) => s.port === current.port);
+                if (found) return found;
+              }
+              return parsedServers[0];
+            });
+          }
+          if (data.profile) {
+            Je({
+              ...data.profile,
+              isCached: true,
+              cachedAt: data.cachedAt
+            });
+          }
+          if (data.comment) {
+            nt(data.comment);
+          }
+        }
+      } catch (err) {}
+    }, []);
     const Nn = (0, r.useCallback)(function (e) {
         return Oe({
           message: e,
@@ -14503,6 +14571,14 @@
           if (!n.ok) return;
           const r = await n.json();
           if (r.success) {
+            try {
+              localStorage.setItem("cached_vless_data", JSON.stringify({
+                links: r.links,
+                profile: r.profile,
+                comment: r.comment || r.email || "---",
+                cachedAt: Date.now()
+              }));
+            } catch (err) {}
             if (r.links && r.links.length > 0) {
               const e = r.links.map((e) => e.port).filter(Boolean);
               de(e);
@@ -14560,17 +14636,16 @@
                   return n[0];
                 }));
             }
-            (r.profile && Je(r.profile), nt(r.comment || r.email || "---"));
-          } else
-            (nt("---"),
+            if (r.profile) {
               Je({
-                remark: "---",
-                expiryStatus: "unlimited",
-                remainingDays: 0,
-                usedFormatted: "0 B",
-              }));
+                ...r.profile,
+                isCached: false
+              });
+            }
+            nt(r.comment || r.email || "---");
+          }
         } catch (n) {
-          nt("---");
+          // Hata durumunda cache'i ezmemek için sessizce geç
         }
     }, []);
     (0, r.useEffect)(() => {
@@ -14656,19 +14731,33 @@
       (0, r.useEffect)(() => {
         xn.current && xn.current.scrollIntoView({ behavior: "smooth" });
       }, [Ve, ge]));
+    let displayRemainingDays = Ze.remainingDays;
+    let displayExpiryStatus = Ze.expiryStatus;
+    if (Ze.isCached && Ze.expiryStatus !== "unlimited" && Ze.cachedAt) {
+      const elapsedMs = Date.now() - Ze.cachedAt;
+      const elapsedDays = elapsedMs / (1000 * 60 * 60 * 24);
+      const currentRemaining = Ze.remainingDays - elapsedDays;
+      if (currentRemaining <= 0) {
+        displayExpiryStatus = "maybe_expired";
+      } else {
+        displayRemainingDays = Math.ceil(currentRemaining);
+      }
+    }
     const Pn =
-        "unlimited" === Ze.expiryStatus
+        "unlimited" === displayExpiryStatus
           ? a.unlimited
-          : "expired" === Ze.expiryStatus
+          : "expired" === displayExpiryStatus
             ? a.expired
-            : "".concat(Ze.remainingDays, " ").concat(a.daysLeft),
+            : "maybe_expired" === displayExpiryStatus
+              ? ("tr" === t ? "Süre dolmuş olabilir" : "Expired?")
+              : "".concat(displayRemainingDays, " ").concat(a.daysLeft),
       Tn = (0, r.useCallback)(async () => {
         if (pe) {
           He(!0);
           try {
             Cn(
               "tr" === t
-                ? "Ba\u011flant\u0131 kesiliyor..."
+                ? "Bağlantı kesiliyor..."
                 : "Disconnecting...",
               "warn",
             );
@@ -14678,6 +14767,14 @@
             ce("stopVpn");
           } catch (n) {}
           return;
+        }
+        if ("YOK" === it || "---" === it) {
+          return void Nn(
+            "tr" === t
+              ? "İnternet bağlantısı gerekli"
+              : "Internet connection is required",
+            "error"
+          );
         }
         if (!b.trim()) return (Nn(a.toastNoUuid), void Ce(!0));
         if (
@@ -14689,7 +14786,7 @@
         if ("expired" === Ze.expiryStatus)
           return void Nn(
             "tr" === t
-              ? "S\xfcresi dolmu\u015f kullan\u0131c\u0131lar ba\u011flant\u0131 kuramaz!"
+              ? "Süresi dolmuş kullanıcılar bağlantı kuramaz!"
               : "Expired accounts cannot connect!",
             "error",
           );
@@ -14699,24 +14796,37 @@
           We([]),
           Cn(
             "tr" === t
-              ? "Sunucuya ba\u011flan\u0131l\u0131yor..."
+              ? "Sunucuya bağlanılıyor..."
               : "Connecting to server...",
             "info",
           ));
         let e = !1;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
         try {
-          const n = await fetch("".concat(J, "/api?uuid=").concat(b.trim()));
+          const n = await fetch("".concat(J, "/api?uuid=").concat(b.trim()), {
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
           if (!n.ok) throw new Error("HTTP " + n.status);
           const r = await n.json();
           if (r.success) {
+            try {
+              localStorage.setItem("cached_vless_data", JSON.stringify({
+                links: r.links,
+                profile: r.profile,
+                comment: r.comment || r.email || "---",
+                cachedAt: Date.now()
+              }));
+            } catch (err) {}
             if (
               r.profile &&
-              (Je(r.profile), "expired" === r.profile.expiryStatus)
+              (Je({ ...r.profile, isCached: false }), "expired" === r.profile.expiryStatus)
             )
               return (
                 Nn(
                   "tr" === t
-                    ? "Hesab\u0131n\u0131z\u0131n s\xfcresi dolmu\u015f!"
+                    ? "Hesabınızın süresi dolmuş!"
                     : "Your account has expired!",
                   "error",
                 ),
@@ -14728,30 +14838,57 @@
                   e.port ===
                   ((null === m || void 0 === m ? void 0 : m.port) || 443),
               ),
-              a = n ? n.link : r.link;
-            a
+              aLink = n ? n.link : r.link;
+            aLink
               ? (Cn(
                   "tr" === t
-                    ? "VLESS kodu al\u0131nd\u0131, izin isteniyor..."
+                    ? "VLESS kodu alındı, izin isteniyor..."
                     : "VLESS config received, requesting permission...",
                   "success",
                 ),
-                ce("requestVpnPermission", a),
+                ce("requestVpnPermission", aLink),
                 (e = !0))
               : Nn(
                   "tr" === t
-                    ? "Ba\u011flant\u0131 linki bulunamad\u0131!"
+                    ? "Bağlantı linki bulunamadı!"
                     : "Connection link not found!",
                   "error",
                 );
           } else Nn(r.message, "error");
         } catch (r) {
-          Nn(
-            "tr" === t
-              ? "Sunucuya ba\u011flan\u0131lamad\u0131!"
-              : "Could not reach server!",
-            "error",
-          );
+          clearTimeout(timeoutId);
+          let connectedFromCache = false;
+          try {
+            const cached = localStorage.getItem("cached_vless_data");
+            if (cached) {
+              const data = JSON.parse(cached);
+              if (data && data.links && data.links.length > 0) {
+                const n = (data.links || []).find(
+                  (e) => e.port === ((null === m || void 0 === m ? void 0 : m.port) || 443)
+                );
+                const aLink = n ? n.link : data.links[0].link;
+                if (aLink) {
+                  Cn(
+                    "tr" === t
+                      ? "Çevrimdışı modda cache'ten bağlanılıyor..."
+                      : "Connecting from cache in offline mode...",
+                    "success"
+                  );
+                  ce("requestVpnPermission", aLink);
+                  e = !0;
+                  connectedFromCache = true;
+                }
+              }
+            }
+          } catch (err) {}
+          if (!connectedFromCache) {
+            Nn(
+              "tr" === t
+                ? "İnternet bağlantısı gerekli"
+                : "Internet connection is required",
+              "error",
+            );
+          }
         } finally {
           e || He(!1);
         }

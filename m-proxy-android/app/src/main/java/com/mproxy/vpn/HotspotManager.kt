@@ -164,6 +164,13 @@ object HotspotManager {
                         password = ""
                         ipAddress = ip
                         
+                        // Sistem Hotspot durumunu kaydet
+                        SecurityUtils.getEncryptedPrefs(appContext, "mproxy_vpn_prefs")
+                            .edit()
+                            .putBoolean("hotspot_was_active", true)
+                            .putString("hotspot_type", "Sistem")
+                            .apply()
+                        
                         showHotspotNotification(appContext, "Sistem")
                         AndroidBridge.activeInstance?.postHotspotStarted("Sistem", "Sistem", "", ip)
                         AndroidBridge.activeInstance?.logToWeb("Sistem Hotspot IP'si algılandı: $ip. Port: 10808", "success")
@@ -232,7 +239,15 @@ object HotspotManager {
     }
 
     private fun createWifiP2pGroup(appContext: Context, manager: WifiP2pManager, channel: WifiP2pManager.Channel, targetSsid: String, targetPass: String) {
-        val finalSsid = "DIRECT-00-MProxy"
+        val suffix = if (targetSsid.startsWith("mProxy")) {
+            targetSsid.substring(6)
+        } else {
+            targetSsid
+        }
+        var finalSsid = "DIRECT-00-MProxy" + suffix
+        if (finalSsid.length > 32) {
+            finalSsid = finalSsid.substring(0, 32)
+        }
         
         var finalPass = targetPass.trim()
         if (finalPass.length < 8) {
@@ -259,7 +274,7 @@ object HotspotManager {
                 hotspotType = null
                 val errorMsg = "WiFi Direct grubu oluşturulamadı. Hata kodu: $reason"
                 Log.e(TAG, errorMsg)
-                appContext.getSharedPreferences("mproxy_vpn_prefs", Context.MODE_PRIVATE)
+                SecurityUtils.getEncryptedPrefs(appContext, "mproxy_vpn_prefs")
                     .edit().remove("hotspot_was_active").apply()
                 MProxyWidgetProvider.triggerUpdate(appContext)
                 AndroidBridge.activeInstance?.logToWeb(errorMsg, "warn")
@@ -281,7 +296,7 @@ object HotspotManager {
         } catch (e: SecurityException) {
             val errorMsg = "Güvenlik hatası: WiFi Direct için gerekli izinler eksik. ${e.message}"
             Log.e(TAG, errorMsg, e)
-            appContext.getSharedPreferences("mproxy_vpn_prefs", Context.MODE_PRIVATE)
+            SecurityUtils.getEncryptedPrefs(appContext, "mproxy_vpn_prefs")
                 .edit().remove("hotspot_was_active").apply()
             MProxyWidgetProvider.triggerUpdate(appContext)
             AndroidBridge.activeInstance?.logToWeb(errorMsg, "warn")
@@ -290,7 +305,7 @@ object HotspotManager {
         } catch (e: Exception) {
             val errorMsg = "WiFi Direct Hotspot başlatılırken beklenmedik hata: ${e.message}"
             Log.e(TAG, errorMsg, e)
-            appContext.getSharedPreferences("mproxy_vpn_prefs", Context.MODE_PRIVATE)
+            SecurityUtils.getEncryptedPrefs(appContext, "mproxy_vpn_prefs")
                 .edit().remove("hotspot_was_active").apply()
             MProxyWidgetProvider.triggerUpdate(appContext)
             AndroidBridge.activeInstance?.logToWeb(errorMsg, "warn")
@@ -324,8 +339,13 @@ object HotspotManager {
                     initializeTrafficCounters(iface)
                     
                     // Hotspot durumunu kalıcı olarak kaydet
-                    appContext.getSharedPreferences("mproxy_vpn_prefs", android.content.Context.MODE_PRIVATE)
-                        .edit().putBoolean("hotspot_was_active", true).apply()
+                    SecurityUtils.getEncryptedPrefs(appContext, "mproxy_vpn_prefs")
+                        .edit()
+                        .putBoolean("hotspot_was_active", true)
+                        .putString("hotspot_type", "WifiDirect")
+                        .putString("hotspot_ssid", finalSsid)
+                        .putString("hotspot_password", passphrase)
+                        .apply()
                     Log.d(TAG, "Hotspot state saved to prefs: hotspot_was_active=true")
                     MProxyWidgetProvider.triggerUpdate(appContext)
                     
@@ -341,7 +361,7 @@ object HotspotManager {
                 } else {
                     isGroupCreated = false
                     hotspotType = null
-                    appContext.getSharedPreferences("mproxy_vpn_prefs", android.content.Context.MODE_PRIVATE)
+                    SecurityUtils.getEncryptedPrefs(appContext, "mproxy_vpn_prefs")
                         .edit().remove("hotspot_was_active").apply()
                     MProxyWidgetProvider.triggerUpdate(appContext)
                     val errorMsg = "WiFi Direct grup bilgisi alınamadı."
@@ -361,8 +381,13 @@ object HotspotManager {
         Log.d(TAG, "stopHotspot")
         
         // Hotspot durumunu temizle
-        appContext.getSharedPreferences("mproxy_vpn_prefs", android.content.Context.MODE_PRIVATE)
-            .edit().remove("hotspot_was_active").apply()
+        SecurityUtils.getEncryptedPrefs(appContext, "mproxy_vpn_prefs")
+            .edit()
+            .remove("hotspot_was_active")
+            .remove("hotspot_type")
+            .remove("hotspot_ssid")
+            .remove("hotspot_password")
+            .apply()
         Log.d(TAG, "Hotspot state cleared from prefs")
         MProxyWidgetProvider.triggerUpdate(appContext)
         

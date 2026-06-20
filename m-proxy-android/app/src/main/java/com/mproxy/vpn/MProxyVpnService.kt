@@ -430,7 +430,12 @@ class MProxyVpnService : VpnService() {
         }
         // Eski bayrağı temizle (yeni olan HotspotManager tarafından temizlenecek)
         prefs.edit().remove("restart_hotspot").apply()
-        Log.d(TAG, "scheduleHotspotRestartIfNeeded: HOTSPOT RESTART NEEDED! Starting in 3s...")
+        
+        val hotspotType = prefs.getString("hotspot_type", "WifiDirect")
+        val savedSsid = prefs.getString("hotspot_ssid", "") ?: ""
+        val savedPass = prefs.getString("hotspot_password", "12345678") ?: "12345678"
+        
+        Log.d(TAG, "scheduleHotspotRestartIfNeeded: HOTSPOT RESTART NEEDED! Type=$hotspotType, Starting in 3s...")
         
         val retryRunnable = object : Runnable {
             var attempts = 0
@@ -442,15 +447,19 @@ class MProxyVpnService : VpnService() {
                     Log.w(TAG, "VPN not active, cancelling hotspot restart")
                     return
                 }
-                Log.d(TAG, "Calling HotspotManager.startHotspot...")
                 HotspotManager.init(applicationContext)
-                HotspotManager.startHotspot(applicationContext, "", "12345678")
-                Log.d(TAG, "HotspotManager.startHotspot() called")
-                // Başarı durumu async, HotspotManager'in kendi callback'leri içinde işlenecek
+                if (hotspotType == "Sistem") {
+                    Log.d(TAG, "Calling HotspotManager.startSystemHotspot...")
+                    HotspotManager.startSystemHotspot(applicationContext)
+                } else {
+                    Log.d(TAG, "Calling HotspotManager.startHotspot with saved credentials...")
+                    HotspotManager.startHotspot(applicationContext, savedSsid, savedPass)
+                }
+                
                 // Tekrar denemek için hotspot_was_active'i 10s sonra kontrol et
                 mainHandler.postDelayed({
                     if (isActive && HotspotManager.hotspotType == null && attempts < maxAttempts) {
-                        Log.w(TAG, "Hotspot still not active after ${attempts * 3}s, retrying...")
+                        Log.w(TAG, "Hotspot still not active after ${attempts * 10}s, retrying...")
                         this.run()
                     } else {
                         Log.d(TAG, "Hotspot restart check done: type=${HotspotManager.hotspotType}")
