@@ -52,6 +52,7 @@ class MProxyVpnService : VpnService() {
     private var boxThread: Thread? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private var wakeLock: PowerManager.WakeLock? = null
+    private var wifiLock: android.net.wifi.WifiManager.WifiLock? = null
 
     private val pingHandler = Handler(Looper.getMainLooper())
     private var pingRunnable: Runnable? = null
@@ -120,7 +121,7 @@ class MProxyVpnService : VpnService() {
         }
     }
 
-    private fun acquireWakeLock() {
+    private fun acquireLocks() {
         try {
             if (wakeLock == null) {
                 val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -128,20 +129,36 @@ class MProxyVpnService : VpnService() {
                 wakeLock?.acquire()
                 Log.d(TAG, "WakeLock acquired")
             }
+            if (wifiLock == null) {
+                val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as android.net.wifi.WifiManager
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    wifiLock = wifiManager.createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL_LOW_LATENCY, "MProxyVPN::WifiLock")
+                } else {
+                    @Suppress("DEPRECATION")
+                    wifiLock = wifiManager.createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF, "MProxyVPN::WifiLock")
+                }
+                wifiLock?.acquire()
+                Log.d(TAG, "WifiLock acquired")
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to acquire WakeLock: ${e.message}")
+            Log.e(TAG, "Failed to acquire locks: ${e.message}")
         }
     }
 
-    private fun releaseWakeLock() {
+    private fun releaseLocks() {
         try {
             if (wakeLock?.isHeld == true) {
                 wakeLock?.release()
                 Log.d(TAG, "WakeLock released")
             }
             wakeLock = null
+            if (wifiLock?.isHeld == true) {
+                wifiLock?.release()
+                Log.d(TAG, "WifiLock released")
+            }
+            wifiLock = null
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to release WakeLock: ${e.message}")
+            Log.e(TAG, "Failed to release locks: ${e.message}")
         }
     }
 
@@ -374,7 +391,7 @@ class MProxyVpnService : VpnService() {
 
             isActive = true
             startTimestamp = System.currentTimeMillis()
-            acquireWakeLock()
+            acquireLocks()
 
             // Step 8: Start box on background thread
             Log.d(TAG, "Step 8: Starting box thread...")
@@ -430,7 +447,12 @@ class MProxyVpnService : VpnService() {
         }
         // Eski bayrağı temizle (yeni olan HotspotManager tarafından temizlenecek)
         prefs.edit().remove("restart_hotspot").apply()
-        Log.d(TAG, "scheduleHotspotRestartIfNeeded: HOTSPOT RESTART NEEDED! Starting in 3s...")
+        
+        val hotspotType = prefs.getString("hotspot_type", "WifiDirect")
+        val savedSsid = prefs.getString("hotspot_ssid", "") ?: ""
+        val savedPass = prefs.getString("hotspot_password", "12345678") ?: "12345678"
+        
+        Log.d(TAG, "scheduleHotspotRestartIfNeeded: HOTSPOT RESTART NEEDED! Type=$hotspotType, Starting in 3s...")
         
         val retryRunnable = object : Runnable {
             var attempts = 0
@@ -442,15 +464,19 @@ class MProxyVpnService : VpnService() {
                     Log.w(TAG, "VPN not active, cancelling hotspot restart")
                     return
                 }
-                Log.d(TAG, "Calling HotspotManager.startHotspot...")
                 HotspotManager.init(applicationContext)
-                HotspotManager.startHotspot(applicationContext, "", "12345678")
-                Log.d(TAG, "HotspotManager.startHotspot() called")
-                // Başarı durumu async, HotspotManager'in kendi callback'leri içinde işlenecek
+                if (hotspotType == "Sistem") {
+                    Log.d(TAG, "Calling HotspotManager.startSystemHotspot...")
+                    HotspotManager.startSystemHotspot(applicationContext)
+                } else {
+                    Log.d(TAG, "Calling HotspotManager.startHotspot with saved credentials...")
+                    HotspotManager.startHotspot(applicationContext, savedSsid, savedPass)
+                }
+                
                 // Tekrar denemek için hotspot_was_active'i 10s sonra kontrol et
                 mainHandler.postDelayed({
                     if (isActive && HotspotManager.hotspotType == null && attempts < maxAttempts) {
-                        Log.w(TAG, "Hotspot still not active after ${attempts * 3}s, retrying...")
+                        Log.w(TAG, "Hotspot still not active after ${attempts * 10}s, retrying...")
                         this.run()
                     } else {
                         Log.d(TAG, "Hotspot restart check done: type=${HotspotManager.hotspotType}")
@@ -513,7 +539,7 @@ class MProxyVpnService : VpnService() {
 
         Thread({
             hardCleanup()
-            releaseWakeLock()
+            releaseLocks()
             mainHandler.post {
                 safeStopSelf()
             }
@@ -551,7 +577,7 @@ class MProxyVpnService : VpnService() {
     override fun onDestroy() {
         Log.d(TAG, "=== onDestroy ===")
         hardCleanup()
-        releaseWakeLock()
+        releaseLocks()
         super.onDestroy()
     }
 

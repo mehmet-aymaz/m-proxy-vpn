@@ -18,3 +18,7 @@ bin/
 *.txt
 *.png
 !m-proxy-android/app/src/main/assets/www/**/*.png
+
+# Build outputs directory
+build_outputs/
+

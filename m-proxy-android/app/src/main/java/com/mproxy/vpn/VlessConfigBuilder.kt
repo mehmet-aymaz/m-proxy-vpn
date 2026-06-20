@@ -76,6 +76,7 @@ object VlessConfigBuilder {
                     put("tag", "mixed-in")
                     put("listen", "0.0.0.0")
                     put("listen_port", 10808)
+                    put("tcp_fast_open", true)
                 })
             })
 
@@ -87,6 +88,7 @@ object VlessConfigBuilder {
                     put("server", host)
                     put("server_port", port)
                     put("uuid", uuid)
+                    put("tcp_fast_open", true)
 
                     val flow = uri.getQueryParameter("flow")
                     if (!flow.isNullOrEmpty() && type != "ws" && type != "grpc") {
