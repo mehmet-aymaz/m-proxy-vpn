@@ -76,56 +76,12 @@ class BoxPlatformInterface(
             }
         }
 
-        // Set IPv6 address from options dynamically
-        var addedIPv6 = false
-        try {
-            val inet6Address = options.getInet6Address()
-            while (inet6Address.hasNext()) {
-                val prefix = inet6Address.next()
-                try {
-                    Log.d(TAG, "Adding IPv6 address from options: ${prefix.address()}/${prefix.prefix()}")
-                    builder.addAddress(prefix.address(), prefix.prefix())
-                    addedIPv6 = true
-                } catch (ea: Exception) {
-                    Log.w(TAG, "Failed to add options IPv6 address: ${ea.message}")
-                }
-            }
-            if (!addedIPv6) {
-                try {
-                    Log.d(TAG, "Adding default IPv6 address: fdfe:5a4e:8b0e::1/126")
-                    builder.addAddress("fdfe:5a4e:8b0e::1", 126)
-                    addedIPv6 = true
-                } catch (ex: Exception) {
-                    Log.w(TAG, "Failed to add default IPv6 address: ${ex.message}")
-                }
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "No inet6 address config or error: ${e.message}")
-        }
+        // Route all traffic through VPN (IPv4 only)
+        builder.addRoute("0.0.0.0", 0)
 
         // Add DNS servers
         builder.addDnsServer("1.1.1.1")
         builder.addDnsServer("8.8.8.8")
-        if (addedIPv6) {
-            try {
-                builder.addDnsServer("2606:4700:4700::1111")
-                builder.addDnsServer("2001:4860:4860::8888")
-                Log.d(TAG, "IPv6 DNS servers added successfully")
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to add IPv6 DNS: ${e.message}")
-            }
-        }
-
-        // Route all traffic through VPN
-        builder.addRoute("0.0.0.0", 0)
-        if (addedIPv6) {
-            try {
-                builder.addRoute("::", 0)
-                Log.d(TAG, "IPv6 route ::/0 added successfully")
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to add IPv6 route ::/0: ${e.message}")
-            }
-        }
 
         // Exclude packages
         try {

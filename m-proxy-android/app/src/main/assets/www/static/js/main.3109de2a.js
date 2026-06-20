@@ -15277,7 +15277,7 @@
                 (0, $.jsx)(ie, {
                   icon: G,
                   label: l(a.statVersion),
-                  value: "v1.1.2",
+                  value: "v1.1.4",
                   accent: "text-cyan-300",
                 }),
               ],
@@ -15952,7 +15952,7 @@
                                     (0, $.jsx)("p", {
                                       className:
                                         "text-[10px] text-white/80 font-bold tracking-wider drop-shadow-md",
-                                      children: l("M-Proxy Client v1.1.2"),
+                                      children: l("M-Proxy Client v1.1.4"),
                                     }),
                                     (0, $.jsx)("p", {
                                       className:
