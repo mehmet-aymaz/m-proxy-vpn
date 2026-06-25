@@ -14157,6 +14157,12 @@
     } catch (a) {}
     return null;
   }
+  function getApiUrl(base, uuid) {
+    const isMpanel = base.includes("mehmetaymaz.com.tr");
+    const cleanBase = isMpanel ? "https://mehmetaymaz.com.tr" : base;
+    const path = isMpanel ? "/api/api?uuid=" : "/api?uuid=";
+    return cleanBase + path + uuid;
+  }
   function de() {
     const e = d(
         (0, r.useState)(() => {
@@ -14628,7 +14634,7 @@
               }
             } catch (err) {}
           }
-          const n = await fetch("".concat(apiBase, "/api?uuid=").concat(e));
+          const n = await fetch(getApiUrl(apiBase, e));
           if (!n.ok) return;
           const r = await n.json();
           if (r.success) {
@@ -14898,7 +14904,7 @@
         const timeoutId = setTimeout(() => controller.abort(), 3000);
         try {
           const apiBase = m && m.domain ? "https://".concat(m.domain, m.domain.includes("mehmetaymaz.com.tr") ? ":2053" : ":8443") : J;
-          const n = await fetch("".concat(apiBase, "/api?uuid=").concat(b.trim()), {
+          const n = await fetch(getApiUrl(apiBase, b.trim()), {
             signal: controller.signal
           });
           clearTimeout(timeoutId);
@@ -15892,14 +15898,14 @@
                             desc: a.extrasHotspotDesc,
                           },
                           {
-                            icon: k,
-                            label: a.extrasDns,
-                            desc: a.extrasDnsDesc,
-                          },
-                          {
                             icon: P,
                             label: a.extrasPerApp,
                             desc: a.extrasPerAppDesc,
+                          },
+                          {
+                            icon: k,
+                            label: a.extrasDns,
+                            desc: a.extrasDnsDesc,
                           },
                           {
                             icon: R,
@@ -15907,10 +15913,9 @@
                             desc: a.extrasSupportDesc,
                           },
                           {
-                            icon: D,
-                            label: a.extrasReset,
-                            desc: a.extrasResetDesc,
-                            danger: !0,
+                            icon: G,
+                            label: "tr" === t ? "Güncellemeleri Denetle" : "Check for Updates",
+                            desc: "tr" === t ? "Uygulamanın yeni sürümünü kontrol et" : "Check for new application version",
                           },
                           {
                             icon: O,
@@ -15918,14 +15923,15 @@
                             desc: a.extrasBatteryDesc,
                           },
                           {
-                            icon: G,
-                            label: "tr" === t ? "Güncellemeleri Denetle" : "Check for Updates",
-                            desc: "tr" === t ? "Uygulamanın yeni sürümünü kontrol et" : "Check for new application version",
+                            icon: D,
+                            label: a.extrasReset,
+                            desc: a.extrasResetDesc,
+                            danger: !0,
                           },
                         ];
                         return (0, $.jsxs)("div", {
                           className:
-                            "px-4 pb-4 h-full flex flex-col animate-fade-in relative z-10 overflow-y-auto",
+                            "px-4 pb-4 flex-1 min-h-0 flex flex-col animate-fade-in relative z-10 overflow-y-auto",
                           children: [
                             (0, $.jsx)("h2", {
                               className:
@@ -16131,11 +16137,7 @@
                                     let e = !1;
                                     try {
                                       const apiBase = m && m.domain ? "https://".concat(m.domain, m.domain.includes("mehmetaymaz.com.tr") ? ":2053" : ":8443") : J;
-                                      const n = await fetch(
-                                        ""
-                                          .concat(apiBase, "/api?uuid=")
-                                          .concat(b.trim()),
-                                      );
+                                      const n = await fetch(getApiUrl(apiBase, b.trim()));
                                       if (!n.ok)
                                         throw new Error("HTTP " + n.status);
                                       const r = await n.json();
@@ -16647,7 +16649,7 @@
 
                                       try {
                                         n = await fetch(
-                                          "".concat(apiBase, "/api?uuid=").concat(e),
+                                          getApiUrl(apiBase, e),
                                         );
                                         if (n.ok) {
                                           r = await n.json();
@@ -16670,7 +16672,7 @@
                                         apiBase = alternativeBase;
                                         try {
                                           n = await fetch(
-                                            "".concat(apiBase, "/api?uuid=").concat(e),
+                                            getApiUrl(apiBase, e),
                                           );
                                           if (n.ok) {
                                             r = await n.json();

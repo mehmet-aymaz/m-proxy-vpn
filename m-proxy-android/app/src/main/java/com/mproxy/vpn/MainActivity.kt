@@ -787,11 +787,24 @@ class MainActivity : AppCompatActivity() {
         val dnsModes = arrayOf("GOOGLE", "CLOUDFLARE", "ADGUARD", "CUSTOM")
         
         val spinnerDns = android.widget.Spinner(this).apply {
-            adapter = android.widget.ArrayAdapter(
-                this@MainActivity,
-                android.R.layout.simple_spinner_dropdown_item,
-                dnsOptions
-            )
+            val customAdapter = object : android.widget.ArrayAdapter<String>(this@MainActivity, android.R.layout.simple_spinner_item, dnsOptions) {
+                override fun getView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
+                    val v = super.getView(position, convertView, parent) as android.widget.TextView
+                    v.setTextColor(android.graphics.Color.WHITE)
+                    v.textSize = 14f
+                    v.setPadding(8.dp(), 8.dp(), 8.dp(), 8.dp())
+                    return v
+                }
+                override fun getDropDownView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
+                    val v = super.getDropDownView(position, convertView, parent) as android.widget.TextView
+                    v.setTextColor(android.graphics.Color.WHITE)
+                    v.setBackgroundColor(android.graphics.Color.parseColor("#0b132b"))
+                    v.textSize = 14f
+                    v.setPadding(16.dp(), 16.dp(), 16.dp(), 16.dp())
+                    return v
+                }
+            }
+            adapter = customAdapter
             val currentDnsMode = AppSettings.getDnsMode(this@MainActivity)
             val idx = dnsModes.indexOf(currentDnsMode).takeIf { it >= 0 } ?: 0
             setSelection(idx)
@@ -918,6 +931,8 @@ class MainActivity : AppCompatActivity() {
 
         val switchPerApp = android.widget.Switch(this).apply {
             isChecked = AppSettings.isPerAppEnabled(this@MainActivity)
+            thumbTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
+            trackTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#60C9A84C"))
         }
         perAppLayout.addView(switchPerApp)
         rootLayout.addView(perAppLayout)
@@ -936,11 +951,24 @@ class MainActivity : AppCompatActivity() {
         val modeOptions = arrayOf("Seçilenleri Tünelle (Proxy)", "Seçilenler Hariç (Bypass/Direct)")
         val modeValues = arrayOf("PROXY", "BYPASS")
         val spinnerMode = android.widget.Spinner(this).apply {
-            adapter = android.widget.ArrayAdapter(
-                this@MainActivity,
-                android.R.layout.simple_spinner_dropdown_item,
-                modeOptions
-            )
+            val customAdapter = object : android.widget.ArrayAdapter<String>(this@MainActivity, android.R.layout.simple_spinner_item, modeOptions) {
+                override fun getView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
+                    val v = super.getView(position, convertView, parent) as android.widget.TextView
+                    v.setTextColor(android.graphics.Color.WHITE)
+                    v.textSize = 14f
+                    v.setPadding(8.dp(), 8.dp(), 8.dp(), 8.dp())
+                    return v
+                }
+                override fun getDropDownView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
+                    val v = super.getDropDownView(position, convertView, parent) as android.widget.TextView
+                    v.setTextColor(android.graphics.Color.WHITE)
+                    v.setBackgroundColor(android.graphics.Color.parseColor("#0b132b"))
+                    v.textSize = 14f
+                    v.setPadding(16.dp(), 16.dp(), 16.dp(), 16.dp())
+                    return v
+                }
+            }
+            adapter = customAdapter
             val currentMode = AppSettings.getPerAppMode(this@MainActivity)
             val idx = modeValues.indexOf(currentMode).takeIf { it >= 0 } ?: 0
             setSelection(idx)
@@ -1243,6 +1271,7 @@ class AppAdapter(
                 id = android.view.View.generateViewId()
                 isFocusable = false
                 isClickable = false
+                buttonTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
             })
         }
         
