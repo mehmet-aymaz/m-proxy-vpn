@@ -506,36 +506,151 @@ class MainActivity : AppCompatActivity() {
 
     private fun showUpdateDialog(latestVersion: String, changelog: String, apkUrl: String) {
         if (isFinishing || isDestroyed) return
-        AlertDialog.Builder(this)
-            .setTitle("Yeni Güncelleme Mevcut")
-            .setMessage("M-Proxy VPN v$latestVersion sürümü indirilebilir. Şimdi güncellemek ister misiniz?\n\nDeğişiklikler:\n$changelog")
-            .setPositiveButton("Güncelle") { _, _ ->
+        
+        val dialog = AlertDialog.Builder(this).create()
+        val density = resources.displayMetrics.density
+        fun Int.dp(): Int = (this * density).toInt()
+
+        val rootLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.parseColor("#0b132b"))
+            setPadding(24.dp(), 24.dp(), 24.dp(), 24.dp())
+            layoutParams = android.view.ViewGroup.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+        }
+
+        // Title
+        val txtTitle = TextView(this).apply {
+            text = "Yeni Sürüm Mevcut"
+            textSize = 18f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(Color.parseColor("#C9A84C"))
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                bottomMargin = 12.dp()
+            }
+        }
+        rootLayout.addView(txtTitle)
+
+        // Message
+        val txtMsg = TextView(this).apply {
+            text = "M-Proxy VPN v$latestVersion sürümü indirilebilir. Şimdi güncellemek ister misiniz?"
+            textSize = 14f
+            setTextColor(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                bottomMargin = 16.dp()
+            }
+        }
+        rootLayout.addView(txtMsg)
+
+        // Changelog header
+        val lblChangelog = TextView(this).apply {
+            text = "Değişiklikler:"
+            textSize = 12f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(Color.parseColor("#80FFFFFF"))
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                bottomMargin = 4.dp()
+            }
+        }
+        rootLayout.addView(lblChangelog)
+
+        // Scrollable Changelog
+        val scrollView = android.widget.ScrollView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 100.dp()).apply {
+                bottomMargin = 20.dp()
+            }
+        }
+        val txtChangelog = TextView(this).apply {
+            text = changelog
+            textSize = 12f
+            setTextColor(Color.parseColor("#CCCCCC"))
+            setLineSpacing(2f, 1.1f)
+        }
+        scrollView.addView(txtChangelog)
+        rootLayout.addView(scrollView)
+
+        // Buttons Layout
+        val buttonsLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        }
+
+        val btnCancel = android.widget.Button(this).apply {
+            text = "DAHA SONRA"
+            setTextColor(Color.WHITE)
+            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#334155"))
+            setOnClickListener { dialog.dismiss() }
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                rightMargin = 8.dp()
+            }
+        }
+        buttonsLayout.addView(btnCancel)
+
+        val btnUpdate = android.widget.Button(this).apply {
+            text = "GÜNCELLE"
+            setTextColor(Color.BLACK)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#C9A84C"))
+            setOnClickListener {
+                dialog.dismiss()
                 downloadAndInstallApk(apkUrl)
             }
-            .setNegativeButton("Daha Sonra", null)
-            .show()
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        buttonsLayout.addView(btnUpdate)
+        rootLayout.addView(buttonsLayout)
+
+        dialog.setView(rootLayout)
+        dialog.show()
     }
 
     private fun downloadAndInstallApk(apkUrl: String) {
-        val padding = (16 * resources.displayMetrics.density).toInt()
-        val layout = LinearLayout(this).apply {
+        val density = resources.displayMetrics.density
+        fun Int.dp(): Int = (this * density).toInt()
+
+        val rootLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(padding, padding, padding, padding)
+            setBackgroundColor(Color.parseColor("#0b132b"))
+            setPadding(24.dp(), 24.dp(), 24.dp(), 24.dp())
+            layoutParams = android.view.ViewGroup.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
         }
+
+        // Title
+        val txtTitle = TextView(this).apply {
+            text = "Güncelleme İndiriliyor"
+            textSize = 18f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(Color.parseColor("#C9A84C"))
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                bottomMargin = 12.dp()
+            }
+        }
+        rootLayout.addView(txtTitle)
+
+        // Progress Text
         val textView = TextView(this).apply {
             text = "Lütfen bekleyin..."
-            setPadding(0, 0, 0, padding / 2)
+            textSize = 14f
+            setTextColor(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                bottomMargin = 8.dp()
+            }
         }
+        rootLayout.addView(textView)
+
+        // ProgressBar
         val progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
             isIndeterminate = false
             max = 100
+            progressTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#C9A84C"))
+            progressBackgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#30FFFFFF"))
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                bottomMargin = 16.dp()
+            }
         }
-        layout.addView(textView)
-        layout.addView(progressBar)
+        rootLayout.addView(progressBar)
 
         val progressDialog = AlertDialog.Builder(this)
-            .setTitle("Güncelleme İndiriliyor")
-            .setView(layout)
+            .setView(rootLayout)
             .setCancelable(false)
             .create()
         progressDialog.show()
