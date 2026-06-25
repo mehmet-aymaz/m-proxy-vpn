@@ -104,6 +104,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webview)
+        webView.clearCache(true)
         
         webView.settings.apply {
             javaScriptEnabled = true
@@ -111,7 +112,7 @@ class MainActivity : AppCompatActivity() {
             allowFileAccess = true
             allowContentAccess = true
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            cacheMode = WebSettings.LOAD_DEFAULT
+            cacheMode = WebSettings.LOAD_NO_CACHE
             setSupportMultipleWindows(false)
             databaseEnabled = true
             mediaPlaybackRequiresUserGesture = false
