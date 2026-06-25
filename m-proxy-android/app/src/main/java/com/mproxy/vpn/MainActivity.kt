@@ -505,9 +505,9 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                setColor(Color.parseColor("#D90B132B"))
+                setColor(Color.parseColor("#14FFFFFF"))
                 cornerRadius = (32 * resources.displayMetrics.density)
-                setStroke((1 * resources.displayMetrics.density).toInt(), Color.parseColor("#33FFFFFF"))
+                setStroke((1 * resources.displayMetrics.density).toInt(), Color.parseColor("#1AFFFFFF"))
             }
             setPadding(24.dp(), 24.dp(), 24.dp(), 24.dp())
             layoutParams = android.view.ViewGroup.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -628,9 +628,9 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                setColor(Color.parseColor("#D90B132B"))
+                setColor(Color.parseColor("#14FFFFFF"))
                 cornerRadius = (32 * resources.displayMetrics.density)
-                setStroke((1 * resources.displayMetrics.density).toInt(), Color.parseColor("#33FFFFFF"))
+                setStroke((1 * resources.displayMetrics.density).toInt(), Color.parseColor("#1AFFFFFF"))
             }
             setPadding(24.dp(), 24.dp(), 24.dp(), 24.dp())
             layoutParams = android.view.ViewGroup.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -806,9 +806,9 @@ class MainActivity : AppCompatActivity() {
             orientation = android.widget.LinearLayout.VERTICAL
             background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                setColor(android.graphics.Color.parseColor("#D90B132B"))
+                setColor(android.graphics.Color.parseColor("#14FFFFFF"))
                 cornerRadius = (32 * resources.displayMetrics.density)
-                setStroke((1 * resources.displayMetrics.density).toInt(), android.graphics.Color.parseColor("#33FFFFFF"))
+                setStroke((1 * resources.displayMetrics.density).toInt(), android.graphics.Color.parseColor("#1AFFFFFF"))
             }
             setPadding(24.dp(), 24.dp(), 24.dp(), 24.dp())
             layoutParams = android.view.ViewGroup.LayoutParams(
@@ -983,9 +983,9 @@ class MainActivity : AppCompatActivity() {
             orientation = android.widget.LinearLayout.VERTICAL
             background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                setColor(android.graphics.Color.parseColor("#D90B132B"))
+                setColor(android.graphics.Color.parseColor("#14FFFFFF"))
                 cornerRadius = (32 * resources.displayMetrics.density)
-                setStroke((1 * resources.displayMetrics.density).toInt(), android.graphics.Color.parseColor("#33FFFFFF"))
+                setStroke((1 * resources.displayMetrics.density).toInt(), android.graphics.Color.parseColor("#1AFFFFFF"))
             }
             setPadding(24.dp(), 24.dp(), 24.dp(), 24.dp())
             layoutParams = android.view.ViewGroup.LayoutParams(

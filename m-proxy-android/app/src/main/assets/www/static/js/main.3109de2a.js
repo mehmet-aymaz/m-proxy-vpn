@@ -15364,7 +15364,7 @@
                 (0, $.jsx)(ie, {
                   icon: G,
                   label: l(a.statVersion),
-                  value: "v".concat(ce("getAppVersion") || "1.2.1"),
+                  value: "v".concat(ce("getAppVersion") || "1.2.2"),
                   accent: "text-cyan-300",
                   onClick: () => {
                     ce("checkUpdatesManually");
@@ -16058,7 +16058,7 @@
                                     (0, $.jsx)("p", {
                                       className:
                                         "text-[10px] text-white/80 font-bold tracking-wider drop-shadow-md",
-                                      children: l("M-Proxy Client v".concat(ce("getAppVersion") || "1.2.1")),
+                                      children: l("M-Proxy Client v".concat(ce("getAppVersion") || "1.2.2")),
                                     }),
                                     (0, $.jsx)("p", {
                                       className:
