@@ -694,6 +694,20 @@ class AndroidBridge(private val context: Context) {
         postToWeb("window.onVpnError?.('${message.replace("'", "\\'")}')")
     }
 
+    fun showToastInWeb(message: String, type: String = "info") {
+        Log.d("AndroidBridge", "showToastInWeb ($type): $message")
+        mainHandler.post {
+            try {
+                val activity = context as? MainActivity
+                if (activity != null && !activity.isFinishing && !activity.isDestroyed) {
+                    val webView = activity.findViewById<android.webkit.WebView>(R.id.webview)
+                    val escapedMsg = message.replace("'", "\\'").replace("\n", "\\\n").replace("\r", "")
+                    webView?.evaluateJavascript("window.onShowToast?.('$escapedMsg', '$type')", null)
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
     companion object {
         @Volatile
         var hotspotReservation: android.net.wifi.WifiManager.LocalOnlyHotspotReservation? = null

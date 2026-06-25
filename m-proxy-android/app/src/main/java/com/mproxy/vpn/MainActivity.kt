@@ -447,25 +447,25 @@ class MainActivity : AppCompatActivity() {
                         } else {
                             if (!silent) {
                                 handler.post {
-                                    Toast.makeText(this@MainActivity, "Uygulama güncel (v$currentVersion)", Toast.LENGTH_SHORT).show()
+                                    showNotification("Uygulama güncel (v$currentVersion)", "success")
                                 }
                             }
                         }
                     } else if (!silent) {
                         handler.post {
-                            Toast.makeText(this@MainActivity, "Güncelleme dosyası bulunamadı.", Toast.LENGTH_SHORT).show()
+                            showNotification("Güncelleme dosyası bulunamadı.", "warn")
                         }
                     }
                 } else if (!silent) {
                     handler.post {
-                        Toast.makeText(this@MainActivity, "API Hatası: ${connection.responseCode}", Toast.LENGTH_SHORT).show()
+                        showNotification("API Hatası: ${connection.responseCode}", "error")
                     }
                 }
             } catch (e: Exception) {
                 Log.e("MainActivity", "Update check failed: ${e.message}", e)
                 if (!silent) {
                     handler.post {
-                        Toast.makeText(this@MainActivity, "Bağlantı Hatası: ${e.message}", Toast.LENGTH_SHORT).show()
+                        showNotification("Bağlantı Hatası: ${e.message}", "error")
                     }
                 }
             } finally {
@@ -584,7 +584,7 @@ class MainActivity : AppCompatActivity() {
                 Log.e("MainActivity", "Apk download failed: ${e.message}", e)
                 handler.post {
                     progressDialog.dismiss()
-                    Toast.makeText(this@MainActivity, "İndirme hatası: ${e.message}", Toast.LENGTH_LONG).show()
+                    showNotification("İndirme hatası: ${e.message}", "error")
                 }
             } finally {
                 try { outputStream?.close() } catch (_: Exception) {}
@@ -604,7 +604,7 @@ class MainActivity : AppCompatActivity() {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
                 startActivity(settingsIntent)
-                Toast.makeText(this, "Lütfen bilinmeyen uygulamaları yükleme iznini verin ve tekrar deneyin.", Toast.LENGTH_LONG).show()
+                showNotification("Lütfen bilinmeyen uygulamaları yükleme iznini verin ve tekrar deneyin.", "warn")
                 return
             }
         }
@@ -621,5 +621,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         startActivity(intent)
+    }
+
+    fun showNotification(message: String, type: String = "info") {
+        val bridge = AndroidBridge.activeInstance
+        if (bridge != null) {
+            bridge.showToastInWeb(message, type)
+        } else {
+            runOnUiThread {
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

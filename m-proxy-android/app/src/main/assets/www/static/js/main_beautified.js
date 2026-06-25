@@ -14588,6 +14588,9 @@
         (e.onHotspotTrafficChanged = (trafficVal) => {
           setHotspotTraffic(trafficVal || "0 B");
         }),
+        (e.onShowToast = (msg, type) => {
+          Nn(msg, type || "info");
+        }),
         () => {
           (delete e.onIPResult,
             delete e.onNetworkResult,
@@ -14599,7 +14602,8 @@
             delete e.onHotspotStopped,
             delete e.onHotspotFailed,
             delete e.onHotspotClientsChanged,
-            delete e.onHotspotTrafficChanged);
+            delete e.onHotspotTrafficChanged,
+            delete e.onShowToast);
         }
       );
     }, [Nn, m, a, t, Cn]);
@@ -14607,12 +14611,12 @@
       if (e)
         try {
           const currentM = selectedServerRef.current;
-          let apiBase = currentM && currentM.domain ? "https://".concat(currentM.domain, ":8443") : J;
+          let apiBase = currentM && currentM.domain ? "https://".concat(currentM.domain, currentM.domain.includes("mehmetaymaz.com.tr") ? ":2053" : ":8443") : J;
           if (!currentM) {
             try {
               const savedPorts = localStorage.getItem("mproxy_ports");
               if (savedPorts && savedPorts.includes("1453")) {
-                apiBase = "https://mehmetaymaz.com.tr:8443";
+                apiBase = "https://mehmetaymaz.com.tr:2053";
               }
             } catch (err) {}
           }
@@ -14885,7 +14889,7 @@
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
         try {
-          const apiBase = m && m.domain ? "https://".concat(m.domain, ":8443") : J;
+          const apiBase = m && m.domain ? "https://".concat(m.domain, m.domain.includes("mehmetaymaz.com.tr") ? ":2053" : ":8443") : J;
           const n = await fetch("".concat(apiBase, "/api?uuid=").concat(b.trim()), {
             signal: controller.signal
           });
@@ -16104,7 +16108,7 @@
                                         )));
                                     let e = !1;
                                     try {
-                                      const apiBase = m && m.domain ? "https://".concat(m.domain, ":8443") : J;
+                                      const apiBase = m && m.domain ? "https://".concat(m.domain, m.domain.includes("mehmetaymaz.com.tr") ? ":2053" : ":8443") : J;
                                       const n = await fetch(
                                         ""
                                           .concat(apiBase, "/api?uuid=")
@@ -16603,7 +16607,7 @@
                                     try {
                                       const primaryBase =
                                         m && m.domain
-                                          ? "https://".concat(m.domain, ":8443")
+                                          ? "https://".concat(m.domain, m.domain.includes("mehmetaymaz.com.tr") ? ":2053" : ":8443")
                                           : J;
                                       const alternativeBase =
                                         m &&
@@ -16612,7 +16616,7 @@
                                           "mehmetaymaz.com.tr",
                                         )
                                           ? "https://wmehmet.web.tr:8443"
-                                          : "https://mehmetaymaz.com.tr:8443";
+                                          : "https://mehmetaymaz.com.tr:2053";
 
                                       let apiBase = primaryBase;
                                       let n;
