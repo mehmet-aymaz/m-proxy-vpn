@@ -13649,6 +13649,18 @@
         IconComponent: K,
         color: "#E1306C",
       },
+      1453: {
+        id: 4,
+        name: "WHATSAPP SINIRSIZ (M-PANEL)",
+        shortName: "M-PANEL",
+        domain: "mehmetaymaz.com.tr",
+        port: 1453,
+        sni: "c.whatsapp.net",
+        host: "c.whatsapp.net",
+        path: "/",
+        IconComponent: q,
+        color: "#25D366",
+      },
     },
     ne = {
       tr: {
@@ -13692,6 +13704,10 @@
           "Arka plan k\u0131s\u0131tlamalar\u0131n\u0131 devre d\u0131\u015f\u0131 b\u0131rak",
         extrasHotspot: "Hotspot (VPN)",
         extrasHotspotDesc: "Harici Wi-Fi ile VPN'i payla\u015f\u0131n",
+        extrasDns: "Geli\u015fmi\u015f DNS Ayarlar\u0131",
+        extrasDnsDesc: "\xd6zel DNS ve Reklam Engelleyici ayarlar\u0131n\u0131 yap\u0131n",
+        extrasPerApp: "Uygulama Bazl\u0131 T\xfcnelleme",
+        extrasPerAppDesc: "Hangi uygulamalar\u0131n VPN kullanaca\u011f\u0131n\u0131 se\xe7in",
         extrasVersionInfo: "VLESS / WS / TLS \xb7 sing-box motoru",
         credHeader: "KAYITLI KIMLIK",
         credSubHeader: "UUID YAPILANDIRMASI",
@@ -13774,6 +13790,10 @@
         extrasBatteryDesc: "Disable background limits",
         extrasHotspot: "Hotspot (VPN)",
         extrasHotspotDesc: "Share VPN via External Wi-Fi",
+        extrasDns: "Advanced DNS Settings",
+        extrasDnsDesc: "Configure custom DNS and AdBlock",
+        extrasPerApp: "Per-App Tunneling",
+        extrasPerAppDesc: "Select which apps route through VPN",
         extrasVersionInfo: "VLESS / WS / TLS \xb7 sing-box engine",
         credHeader: "SAVED IDENTITY",
         credSubHeader: "UUID CONFIGURATION",
@@ -14055,10 +14075,12 @@
     let t = e.icon,
       n = e.label,
       r = e.value,
-      a = e.accent;
+      a = e.accent,
+      o = e.onClick;
     return (0, $.jsxs)("div", {
+      onClick: o,
       className:
-        "glass-panel rounded-xl p-3 flex flex-col gap-1 h-[60px] justify-center",
+        "glass-panel rounded-xl p-3 flex flex-col gap-1 h-[60px] justify-center " + (o ? "cursor-pointer active:scale-[0.97] transition-all duration-200" : ""),
       children: [
         (0, $.jsxs)("div", {
           className: "flex items-center gap-1.5 drop-shadow-md",
@@ -14134,6 +14156,12 @@
       }
     } catch (a) {}
     return null;
+  }
+  function getApiUrl(base, uuid) {
+    const isMpanel = base.includes("mehmetaymaz.com.tr");
+    const cleanBase = isMpanel ? "https://panel.mehmetaymaz.com.tr" : base;
+    const path = isMpanel ? "/api/api?uuid=" : "/api?uuid=";
+    return cleanBase + path + uuid;
   }
   function de() {
     const e = d(
@@ -14312,6 +14340,9 @@
       Xt = d((0, r.useState)("192.168.43.1"), 2),
       Zt = Xt[0],
       Jt = Xt[1],
+      hotspotTrafficState = d((0, r.useState)("0 B"), 2),
+      hotspotTraffic = hotspotTrafficState[0],
+      setHotspotTraffic = hotspotTrafficState[1],
       en = d(
         (0, r.useState)(() => {
           try {
@@ -14386,7 +14417,8 @@
       xn = (0, r.useRef)(null),
       kn = (0, r.useRef)(!1),
       wn = (0, r.useRef)(dn),
-      Sn = (0, r.useRef)(hn);
+      Sn = (0, r.useRef)(hn),
+      selectedServerRef = (0, r.useRef)(null);
     ((0, r.useEffect)(() => {
       wn.current = dn;
     }, [dn]),
@@ -14405,17 +14437,16 @@
                 r = "VPN",
                 a = k,
                 l = "#06b6d4";
-              return (
-                t.includes("whatsapp")
-                  ? ((n = "WHATSAPP SINIRSIZ PAKET"),
-                    (r = "WHATSAPP"),
-                    (a = q),
-                    (l = "#25D366"))
-                  : t.includes("youtube")
-                    ? ((n = "YOUTUBE SINIRSIZ PAKET"),
-                      (r = "YOUTUBE"),
-                      (a = Q),
-                      (l = "#FF0000"))
+              t.includes("whatsapp")
+                ? ((n = "WHATSAPP SINIRSIZ PAKET"),
+                  (r = "WHATSAPP"),
+                  (a = q),
+                  (l = "#25D366"))
+                : t.includes("youtube")
+                  ? ((n = "YOUTUBE SINIRSIZ PAKET"),
+                    (r = "YOUTUBE"),
+                    (a = Q),
+                    (l = "#FF0000"))
                   : t.includes("instagram")
                     ? ((n = "INSTAGRAM SINIRSIZ PAKET"),
                       (r = "INSTAGRAM"),
@@ -14427,17 +14458,27 @@
                         (a = Y),
                         (l = "#00f2fe"))
                       : t.includes("telegram") &&
-                        ((r = "TELEGRAM"), (l = "#0088cc")),
-                {
-                  id: e.port,
-                  name: n,
-                  shortName: r,
-                  port: e.port,
-                  link: e.link,
-                  IconComponent: a,
-                  color: l,
-                }
-              );
+                        ((r = "TELEGRAM"), (l = "#0088cc"));
+              
+              let finalLink = e.link;
+              const isMpanel = e.port === 1453 || (finalLink && (finalLink.includes("mehmetaymaz.com.tr") || finalLink.includes("mehmetaymaz.com.tr") || finalLink.includes("185.254.28.210")));
+              if (finalLink && isMpanel) {
+                finalLink = finalLink.replace(/(@[^:]+):(\d+)/, "$1:1453");
+              }
+              const baseProfile = te[e.port] || {};
+              return {
+                id: e.port,
+                name: baseProfile.name || n,
+                shortName: baseProfile.shortName || r,
+                port: e.port,
+                link: finalLink,
+                IconComponent: baseProfile.IconComponent || a,
+                color: baseProfile.color || l,
+                domain: baseProfile.domain,
+                sni: baseProfile.sni,
+                host: baseProfile.host,
+                path: baseProfile.path,
+              };
             });
             dt(parsedServers);
             g((current) => {
@@ -14445,6 +14486,13 @@
                 const found = parsedServers.find((s) => s.port === current.port);
                 if (found) return found;
               }
+              try {
+                const savedPort = localStorage.getItem("mproxy_selected_port");
+                if (savedPort) {
+                  const found = parsedServers.find((s) => s.port === parseInt(savedPort));
+                  if (found) return found;
+                }
+              } catch (err) {}
               return parsedServers[0];
             });
           }
@@ -14543,12 +14591,19 @@
         (e.onHotspotStopped = () => {
           Mt((wasActive) => (wasActive && Nn(a.toastHotspotStop, "info"), !1));
           Ht(!1);
+          setHotspotTraffic("0 B");
         }),
         (e.onHotspotFailed = (e) => {
           (Mt(!1), Ht(!1));
         }),
         (e.onHotspotClientsChanged = (e) => {
           Gt(e);
+        }),
+        (e.onHotspotTrafficChanged = (trafficVal) => {
+          setHotspotTraffic(trafficVal || "0 B");
+        }),
+        (e.onShowToast = (msg, type) => {
+          Nn(msg, type || "info");
         }),
         () => {
           (delete e.onIPResult,
@@ -14560,17 +14615,39 @@
             delete e.onHotspotStarted,
             delete e.onHotspotStopped,
             delete e.onHotspotFailed,
-            delete e.onHotspotClientsChanged);
+            delete e.onHotspotClientsChanged,
+            delete e.onHotspotTrafficChanged,
+            delete e.onShowToast);
         }
       );
     }, [Nn, m, a, t, Cn]);
     const jn = (0, r.useCallback)(async (e) => {
       if (e)
         try {
-          const n = await fetch("".concat(J, "/api?uuid=").concat(e));
+          const currentM = selectedServerRef.current;
+          let apiBase = currentM && currentM.domain ? "https://".concat(currentM.domain, currentM.domain.includes("mehmetaymaz.com.tr") ? ":2053" : ":8443") : J;
+          if (!currentM) {
+            try {
+              const savedPorts = localStorage.getItem("mproxy_ports");
+              if (savedPorts && savedPorts.includes("1453")) {
+                apiBase = "https://mehmetaymaz.com.tr:2053";
+              }
+            } catch (err) {}
+          }
+          const n = await fetch(getApiUrl(apiBase, e));
           if (!n.ok) return;
           const r = await n.json();
           if (r.success) {
+            if (r.links && r.links.length > 0) {
+              const isMpanel = apiBase.includes("mehmetaymaz.com.tr");
+              r.links = r.links.map(l => {
+                if (l.link && (isMpanel || l.link.includes("mehmetaymaz.com.tr") || l.link.includes("mehmetaymaz.com.tr") || l.link.includes("185.254.28.210") || l.port === 1453)) {
+                  const updatedLink = l.link.replace(/(@[^:]+):(\d+)/, "$1:1453");
+                  return { ...l, port: 1453, link: updatedLink };
+                }
+                return l;
+              });
+            }
             try {
               localStorage.setItem("cached_vless_data", JSON.stringify({
                 links: r.links,
@@ -14592,39 +14669,43 @@
                     r = "VPN",
                     a = k,
                     l = "#06b6d4";
-                  return (
-                    t.includes("whatsapp")
-                      ? ((n = "WHATSAPP SINIRSIZ PAKET"),
-                        (r = "WHATSAPP"),
-                        (a = q),
-                        (l = "#25D366"))
-                      : t.includes("youtube")
-                        ? ((n = "YOUTUBE SINIRSIZ PAKET"),
-                          (r = "YOUTUBE"),
-                          (a = Q),
-                          (l = "#FF0000"))
-                        : t.includes("instagram")
-                          ? ((n = "INSTAGRAM SINIRSIZ PAKET"),
-                            (r = "INSTAGRAM"),
-                            (a = K),
-                            (l = "#E1306C"))
-                          : t.includes("tiktok")
-                            ? ((n = "TIKTOK SINIRSIZ PAKET"),
-                              (r = "TIKTOK"),
-                              (a = Y),
-                              (l = "#00f2fe"))
-                            : t.includes("telegram") &&
-                              ((r = "TELEGRAM"), (l = "#0088cc")),
-                    {
-                      id: e.port,
-                      name: n,
-                      shortName: r,
-                      port: e.port,
-                      link: e.link,
-                      IconComponent: a,
-                      color: l,
-                    }
-                  );
+                  t.includes("whatsapp")
+                    ? ((n = "WHATSAPP SINIRSIZ PAKET"),
+                      (r = "WHATSAPP"),
+                      (a = q),
+                      (l = "#25D366"))
+                    : t.includes("youtube")
+                      ? ((n = "YOUTUBE SINIRSIZ PAKET"),
+                        (r = "YOUTUBE"),
+                        (a = Q),
+                        (l = "#FF0000"))
+                      : t.includes("instagram")
+                        ? ((n = "INSTAGRAM SINIRSIZ PAKET"),
+                          (r = "INSTAGRAM"),
+                          (a = K),
+                          (l = "#E1306C"))
+                        : t.includes("tiktok")
+                          ? ((n = "TIKTOK SINIRSIZ PAKET"),
+                            (r = "TIKTOK"),
+                            (a = Y),
+                            (l = "#00f2fe"))
+                          : t.includes("telegram") &&
+                            ((r = "TELEGRAM"), (l = "#0088cc"));
+                  
+                  const baseProfile = te[e.port] || {};
+                  return {
+                    id: e.port,
+                    name: baseProfile.name || n,
+                    shortName: baseProfile.shortName || r,
+                    port: e.port,
+                    link: e.link,
+                    IconComponent: baseProfile.IconComponent || a,
+                    color: baseProfile.color || l,
+                    domain: baseProfile.domain,
+                    sni: baseProfile.sni,
+                    host: baseProfile.host,
+                    path: baseProfile.path,
+                  };
                 })(e),
               );
               (dt(n),
@@ -14647,7 +14728,7 @@
         } catch (n) {
           // Hata durumunda cache'i ezmemek için sessizce geç
         }
-    }, []);
+    }, [J, dt, de, Je, nt]);
     (0, r.useEffect)(() => {
       const sync = () => {
         const active = ce("isVpnActive");
@@ -14691,7 +14772,7 @@
           { port: 443, host: ee },
           { port: 8080, host: ee },
           { port: 1905, host: ee },
-          { port: 1453, host: ee },
+          { port: 1453, host: "mehmetaymaz.com.tr" },
         ];
         e.forEach((e) => ce("pingServer", e.host, e.port));
         const t = setInterval(() => {
@@ -14704,10 +14785,20 @@
           if (Z.length > 0) {
             const e = Z.map((e) => te[e]).filter(Boolean),
               t = e.length > 0 ? e : [te[443]];
-            (dt(t), g(t[0]));
+            dt(t);
+            let selected = t[0];
+            try {
+              const savedPort = localStorage.getItem("mproxy_selected_port");
+              if (savedPort) {
+                const found = t.find((s) => s.port === parseInt(savedPort));
+                if (found) selected = found;
+              }
+            } catch (err) {}
+            g(selected);
           } else {
             const e = [te[443], te[8080]];
-            (dt(e), g(e[0]));
+            dt(e);
+            g(e[0]);
           }
       }, [Z, ct]),
       (0, r.useEffect)(
@@ -14728,6 +14819,14 @@
         ),
         [pe],
       ),
+      (0, r.useEffect)(() => {
+        selectedServerRef.current = m;
+        if (m && m.port) {
+          try {
+            localStorage.setItem("mproxy_selected_port", m.port);
+          } catch (e) {}
+        }
+      }, [m]),
       (0, r.useEffect)(() => {
         xn.current && xn.current.scrollIntoView({ behavior: "smooth" });
       }, [Ve, ge]));
@@ -14804,13 +14903,24 @@
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
         try {
-          const n = await fetch("".concat(J, "/api?uuid=").concat(b.trim()), {
+          const apiBase = m && m.domain ? "https://".concat(m.domain, m.domain.includes("mehmetaymaz.com.tr") ? ":2053" : ":8443") : J;
+          const n = await fetch(getApiUrl(apiBase, b.trim()), {
             signal: controller.signal
           });
           clearTimeout(timeoutId);
           if (!n.ok) throw new Error("HTTP " + n.status);
           const r = await n.json();
           if (r.success) {
+            const isMpanel = apiBase.includes("mehmetaymaz.com.tr") || (m && m.port === 1453);
+            if (r.links && r.links.length > 0) {
+              r.links = r.links.map(l => {
+                if (l.link && (isMpanel || l.link.includes("mehmetaymaz.com.tr") || l.link.includes("mehmetaymaz.com.tr") || l.link.includes("185.254.28.210") || l.port === 1453)) {
+                  const updatedLink = l.link.replace(/(@[^:]+):(\d+)/, "$1:1453");
+                  return { ...l, port: 1453, link: updatedLink };
+                }
+                return l;
+              });
+            }
             try {
               localStorage.setItem("cached_vless_data", JSON.stringify({
                 links: r.links,
@@ -14837,8 +14947,11 @@
                 (e) =>
                   e.port ===
                   ((null === m || void 0 === m ? void 0 : m.port) || 443),
-              ),
-              aLink = n ? n.link : r.link;
+              );
+            let aLink = n ? n.link : r.link;
+            if (aLink && (isMpanel || aLink.includes("mehmetaymaz.com.tr") || aLink.includes("mehmetaymaz.com.tr") || aLink.includes("185.254.28.210"))) {
+              aLink = aLink.replace(/(@[^:]+):(\d+)/, "$1:1453");
+            }
             aLink
               ? (Cn(
                   "tr" === t
@@ -14866,7 +14979,11 @@
                 const n = (data.links || []).find(
                   (e) => e.port === ((null === m || void 0 === m ? void 0 : m.port) || 443)
                 );
-                const aLink = n ? n.link : data.links[0].link;
+                let aLink = n ? n.link : data.links[0].link;
+                const isMpanelFallback = (m && m.port === 1453) || (aLink && (aLink.includes("mehmetaymaz.com.tr") || aLink.includes("mehmetaymaz.com.tr") || aLink.includes("185.254.28.210")));
+                if (aLink && isMpanelFallback) {
+                  aLink = aLink.replace(/(@[^:]+):(\d+)/, "$1:1453");
+                }
                 if (aLink) {
                   Cn(
                     "tr" === t
@@ -14903,7 +15020,7 @@
       Ln = () =>
         (0, $.jsxs)("div", {
           className:
-            "flex flex-col items-center justify-start gap-2.5 h-full px-4 pb-2 relative z-10 pt-1",
+            "flex flex-col items-center justify-start gap-1.5 flex-1 min-h-0 w-full px-4 pb-2 relative z-10 pt-1 overflow-y-auto",
           children: [
             (0, $.jsxs)("div", {
               className: "flex flex-col items-center gap-0.5 flex-shrink-0",
@@ -14915,7 +15032,7 @@
                 }),
                 (0, $.jsx)("span", {
                   className:
-                    "font-mono text-4xl font-extrabold tracking-wider transition-colors duration-500 text-white",
+                    "font-mono text-3xl font-extrabold tracking-wider transition-colors duration-500 text-white",
                   style: {
                     textShadow: pe
                       ? "0 0 25px ".concat(
@@ -15016,7 +15133,7 @@
                             className: "text-[9px] font-black ".concat(
                               Yt > 0 ? "text-emerald-300" : "text-white/40",
                             ),
-                            children: Yt,
+                            children: "tr" === t ? "".concat(Yt, " Cihaz | ").concat(hotspotTraffic) : "".concat(Yt, " Clients | ").concat(hotspotTraffic),
                           }),
                         ],
                       }),
@@ -15027,17 +15144,7 @@
                       "grid grid-cols-3 gap-2 text-[10px] text-cyan-50 font-mono",
                     children: [
                       (0, $.jsxs)("div", {
-                        className:
-                          "flex flex-col overflow-hidden cursor-pointer hover:text-cyan-200",
-                        onClick: () => {
-                          (ce("setClipboard", Vt),
-                            Nn(
-                              "tr" === t
-                                ? "A\u011f ad\u0131 kopyaland\u0131"
-                                : "SSID copied",
-                              "success",
-                            ));
-                        },
+                        className: "flex flex-col overflow-hidden",
                         children: [
                           (0, $.jsx)("span", {
                             className:
@@ -15051,17 +15158,7 @@
                         ],
                       }),
                       (0, $.jsxs)("div", {
-                        className:
-                          "flex flex-col overflow-hidden cursor-pointer hover:text-cyan-200",
-                        onClick: () => {
-                          (ce("setClipboard", qt),
-                            Nn(
-                              "tr" === t
-                                ? "\u015eifre kopyaland\u0131"
-                                : "Password copied",
-                              "success",
-                            ));
-                        },
+                        className: "flex flex-col overflow-hidden",
                         children: [
                           (0, $.jsx)("span", {
                             className:
@@ -15075,17 +15172,7 @@
                         ],
                       }),
                       (0, $.jsxs)("div", {
-                        className:
-                          "flex flex-col overflow-hidden cursor-pointer hover:text-cyan-200",
-                        onClick: () => {
-                          (ce("setClipboard", "".concat(Zt, ":10808")),
-                            Nn(
-                              "tr" === t
-                                ? "Proxy kopyaland\u0131"
-                                : "Proxy copied",
-                              "success",
-                            ));
-                        },
+                        className: "flex flex-col overflow-hidden",
                         children: [
                           (0, $.jsx)("span", {
                             className:
@@ -15277,8 +15364,11 @@
                 (0, $.jsx)(ie, {
                   icon: G,
                   label: l(a.statVersion),
-                  value: "v".concat(ce("getAppVersion") || "1.2.0"),
+                  value: "v".concat(ce("getAppVersion") || "1.2.1"),
                   accent: "text-cyan-300",
+                  onClick: () => {
+                    ce("checkUpdatesManually");
+                  },
                 }),
               ],
             }),
@@ -15399,7 +15489,7 @@
         const idleStartSub = "tr" === t ? "Testi başlatmak için dokunun" : "Tap to start speed test";
 
         return (0, $.jsxs)("div", {
-          className: "px-4 pb-4 h-full flex flex-col items-center justify-center gap-6 animate-fade-in relative z-10",
+          className: "px-4 pb-4 flex-1 min-h-0 w-full flex flex-col items-center justify-center gap-6 animate-fade-in relative z-10",
           children: [
             (0, $.jsx)("div", {
               className: "flex flex-col items-center justify-center mb-1 flex-shrink-0 w-full min-h-[50px]"
@@ -15407,11 +15497,11 @@
             (0, $.jsxs)("div", {
               onClick: !vt ? startSpeedTest : null,
               style: { outline: "none", WebkitTapHighlightColor: "transparent" },
-              className: "relative w-64 h-64 flex flex-col items-center justify-center mb-2 mt-1 flex-shrink-0 " + (!vt ? "cursor-pointer active:scale-[0.97] transition-all duration-300" : ""),
+              className: "relative w-52 h-52 flex flex-col items-center justify-center mb-1 mt-0 flex-shrink-0 " + (!vt ? "cursor-pointer active:scale-[0.97] transition-all duration-300" : ""),
               children: [
                 (0, $.jsxs)("svg", {
-                  width: "256",
-                  height: "256",
+                  width: "208",
+                  height: "208",
                   viewBox: "0 0 200 200",
                   className: "drop-shadow-[0_8px_16px_rgba(0,0,0,0.4)]",
                   children: [
@@ -15648,14 +15738,14 @@
       children: [
         (0, $.jsx)("style", {
           children:
-            "\n        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');\n        * { font-family: 'Outfit', sans-serif; box-sizing: border-box; user-select: none; -webkit-user-select: none; }\n        input, textarea { user-select: text; -webkit-user-select: text; }\n        body { background: #000; margin: 0; padding: 0; }\n        button { background: transparent; border: none; outline: none; padding: 0; margin: 0; cursor: pointer; }\n        .glass-panel {\n          background: rgba(255,255,255,0.03);\n          backdrop-filter: blur(16px);\n          -webkit-backdrop-filter: blur(16px);\n          border: 1px solid rgba(255,255,255,0.1);\n          border-top: 1px solid rgba(255,255,255,0.25);\n          border-left: 1px solid rgba(255,255,255,0.15);\n          box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.15);\n        }\n        .liquid-blob-1 { animation: float-blob 18s ease-in-out infinite alternate; }\n        .liquid-blob-2 { animation: float-blob-reverse 22s ease-in-out infinite alternate; }\n        .liquid-blob-3 { animation: float-blob 15s ease-in-out infinite alternate-reverse; }\n        @keyframes float-blob {\n          0% { transform: translate3d(0,0,0) scale(1) rotate(0deg); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }\n          33% { transform: translate3d(30px,-50px,0) scale(1.1) rotate(15deg); border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%; }\n          66% { transform: translate3d(-20px,20px,0) scale(0.9) rotate(-10deg); border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%; }\n          100% { transform: translate3d(0,0,0) scale(1) rotate(0deg); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }\n        }\n        @keyframes float-blob-reverse {\n          0% { transform: translate3d(0,0,0) scale(1) rotate(0deg); border-radius: 50% 50% 50% 70% / 50% 50% 70% 50%; }\n          50% { transform: translate3d(-40px,40px,0) scale(1.2) rotate(-20deg); border-radius: 80% 30% 50% 50% / 50% 50% 30% 80%; }\n          100% { transform: translate3d(20px,-20px,0) scale(0.8) rotate(10deg); border-radius: 50% 50% 50% 70% / 50% 50% 70% 50%; }\n        }\n        @keyframes ping-slow { 0%,100% { transform: scale(1); opacity: .4; } 50% { transform: scale(1.1); opacity: .1; } }\n        @keyframes ping-slower { 0%,100% { transform: scale(1); opacity: .3; } 50% { transform: scale(1.15); opacity: .03; } }\n        @keyframes slide-down { from { opacity: 0; transform: translate3d(-50%,-20px,0); } to { opacity: 1; transform: translate3d(-50%,0,0); } }\n        @keyframes slide-up { from { opacity: 0; transform: translate3d(0,100%,0); } to { opacity: 1; transform: translate3d(0,0,0); } }\n        @keyframes fade-in { from { opacity: 0; transform: translate3d(0,8px,0); } to { opacity: 1; transform: translate3d(0,0,0); } }\n        @keyframes shimmer { 0% { transform: translate3d(-100%,0,0); } 100% { transform: translate3d(200%,0,0); } }\n        @keyframes modal-in { from { opacity: 0; transform: translate3d(0,-20px,0) scale(0.95); } to { opacity: 1; transform: translate3d(0,0,0) scale(1); } }\n        ::-webkit-scrollbar { width: 0; }\n      ",
+            "\n        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');\n        * { font-family: 'Outfit', sans-serif; box-sizing: border-box; user-select: none; -webkit-user-select: none; }\n        input, textarea { user-select: text; -webkit-user-select: text; }\n        html, body, #root { height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; background: #000; }\n        button { background: transparent; border: none; outline: none; padding: 0; margin: 0; cursor: pointer; }\n        .glass-panel {\n          background: rgba(255,255,255,0.03);\n          backdrop-filter: blur(16px);\n          -webkit-backdrop-filter: blur(16px);\n          border: 1px solid rgba(255,255,255,0.1);\n          border-top: 1px solid rgba(255,255,255,0.25);\n          border-left: 1px solid rgba(255,255,255,0.15);\n          box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.15);\n        }\n        .liquid-blob-1 { animation: float-blob 18s ease-in-out infinite alternate; }\n        .liquid-blob-2 { animation: float-blob-reverse 22s ease-in-out infinite alternate; }\n        .liquid-blob-3 { animation: float-blob 15s ease-in-out infinite alternate-reverse; }\n        @keyframes float-blob {\n          0% { transform: translate3d(0,0,0) scale(1) rotate(0deg); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }\n          33% { transform: translate3d(30px,-50px,0) scale(1.1) rotate(15deg); border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%; }\n          66% { transform: translate3d(-20px,20px,0) scale(0.9) rotate(-10deg); border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%; }\n          100% { transform: translate3d(0,0,0) scale(1) rotate(0deg); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }\n        }\n        @keyframes float-blob-reverse {\n          0% { transform: translate3d(0,0,0) scale(1) rotate(0deg); border-radius: 50% 50% 50% 70% / 50% 50% 70% 50%; }\n          50% { transform: translate3d(-40px,40px,0) scale(1.2) rotate(-20deg); border-radius: 80% 30% 50% 50% / 50% 50% 30% 80%; }\n          100% { transform: translate3d(20px,-20px,0) scale(0.8) rotate(10deg); border-radius: 50% 50% 50% 70% / 50% 50% 70% 50%; }\n        }\n        @keyframes ping-slow { 0%,100% { transform: scale(1); opacity: .4; } 50% { transform: scale(1.1); opacity: .1; } }\n        @keyframes ping-slower { 0%,100% { transform: scale(1); opacity: .3; } 50% { transform: scale(1.15); opacity: .03; } }\n        @keyframes slide-down { from { opacity: 0; transform: translate3d(-50%,-20px,0); } to { opacity: 1; transform: translate3d(-50%,0,0); } }\n        @keyframes slide-up { from { opacity: 0; transform: translate3d(0,100%,0); } to { opacity: 1; transform: translate3d(0,0,0); } }\n        @keyframes fade-in { from { opacity: 0; transform: translate3d(0,8px,0); } to { opacity: 1; transform: translate3d(0,0,0); } }\n        @keyframes shimmer { 0% { transform: translate3d(-100%,0,0); } 100% { transform: translate3d(200%,0,0); } }\n        @keyframes modal-in { from { opacity: 0; transform: translate3d(0,-20px,0) scale(0.95); } to { opacity: 1; transform: translate3d(0,0,0) scale(1); } }\n        ::-webkit-scrollbar { width: 0; }\n      ",
         }),
         (0, $.jsx)("div", {
           className:
-            "min-h-screen w-full flex items-center justify-center p-0 md:p-4 bg-zinc-950",
+            "h-full w-full flex items-center justify-center p-0 md:p-4 bg-zinc-950 overflow-hidden",
           children: (0, $.jsxs)("div", {
             className:
-              "relative w-full max-w-[390px] min-h-screen md:min-h-[812px] md:rounded-[40px] md:border-[10px] md:border-zinc-900 md:shadow-[0_30px_80px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden bg-black",
+              "relative w-full max-w-[390px] h-full md:h-[812px] md:rounded-[40px] md:border-[10px] md:border-zinc-900 md:shadow-[0_30px_80px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden bg-black",
             children: [
               (0, $.jsxs)("div", {
                 className:
@@ -15736,7 +15826,7 @@
               }),
               (0, $.jsx)("div", {
                 className:
-                  "relative z-10 flex-1 overflow-hidden pt-1 pb-1 flex flex-col",
+                  "relative z-10 flex-1 min-h-0 overflow-hidden pt-1 pb-1 flex flex-col",
                 children: (() => {
                   switch (ge) {
                     case "home":
@@ -15745,7 +15835,7 @@
                     case "logs":
                       return (0, $.jsxs)("div", {
                         className:
-                          "px-4 pb-4 h-full flex flex-col relative z-10",
+                          "px-4 pb-4 flex-1 min-h-0 w-full flex flex-col relative z-10",
                         children: [
                           (0, $.jsx)("h2", {
                             className:
@@ -15808,9 +15898,24 @@
                             desc: a.extrasHotspotDesc,
                           },
                           {
-                            icon: R,
-                            label: a.extrasSupport,
-                            desc: a.extrasSupportDesc,
+                            icon: P,
+                            label: a.extrasPerApp,
+                            desc: a.extrasPerAppDesc,
+                          },
+                          {
+                            icon: k,
+                            label: a.extrasDns,
+                            desc: a.extrasDnsDesc,
+                          },
+                          {
+                            icon: G,
+                            label: "tr" === t ? "Güncellemeleri Denetle" : "Check for Updates",
+                            desc: "tr" === t ? "Uygulamanın yeni sürümünü kontrol et" : "Check for new application version",
+                          },
+                          {
+                            icon: O,
+                            label: a.extrasBattery,
+                            desc: a.extrasBatteryDesc,
                           },
                           {
                             icon: D,
@@ -15818,15 +15923,10 @@
                             desc: a.extrasResetDesc,
                             danger: !0,
                           },
-                          {
-                            icon: O,
-                            label: a.extrasBattery,
-                            desc: a.extrasBatteryDesc,
-                          },
                         ];
                         return (0, $.jsxs)("div", {
                           className:
-                            "px-4 pb-4 h-full flex flex-col animate-fade-in relative z-10 overflow-y-auto",
+                            "px-4 pb-4 flex-1 min-h-0 flex flex-col animate-fade-in relative z-10 overflow-y-auto",
                           children: [
                             (0, $.jsx)("h2", {
                               className:
@@ -15835,16 +15935,16 @@
                             }),
                             (0, $.jsx)("div", {
                               className: "space-y-3 flex-shrink-0",
-                              children: e.map((e) => {
-                                let t = e.icon,
-                                  n = e.label,
-                                  r = e.desc,
-                                  o = e.danger;
+                              children: e.map((item) => {
+                                let itemIcon = item.icon,
+                                  itemLabel = item.label,
+                                  itemDesc = item.desc,
+                                  itemDanger = item.danger;
                                 return (0, $.jsxs)(
                                   "button",
                                   {
                                     onClick: () => {
-                                      if (n === a.extrasReset) {
+                                      if (itemLabel === a.extrasReset) {
                                         if (pe)
                                           return void Nn(
                                             "tr" === t
@@ -15874,20 +15974,26 @@
                                           nt("---"),
                                           Nn(a.toastResetSuccess, "info"));
                                       } else
-                                        n === a.extrasHotspot
+                                        itemLabel === a.extrasHotspot
                                           ? Le(!0)
-                                          : n === a.extrasBattery
+                                          : itemLabel === a.extrasBattery
                                             ? (ce("openBatteryOptimization"),
                                               Nn(
                                                 a.toastBatterySuccess,
                                                 "success",
                                               ))
-                                            : Nn(
-                                                '"'
-                                                  .concat(n, '" ')
-                                                  .concat(a.toastSoon),
-                                                "info",
-                                              );
+                                            : itemLabel === a.extrasDns
+                                              ? ce("openDnsSettings")
+                                              : itemLabel === a.extrasPerApp
+                                                ? ce("openPerAppSettings")
+                                                : itemLabel === ("tr" === t ? "Güncellemeleri Denetle" : "Check for Updates")
+                                                  ? ce("checkUpdatesManually")
+                                                  : Nn(
+                                                      '"'
+                                                        .concat(itemLabel, '" ')
+                                                        .concat(a.toastSoon),
+                                                      "info",
+                                                    );
                                     },
                                     className:
                                       "w-full flex items-center gap-4 glass-panel rounded-2xl px-4 py-3.5 hover:bg-white/10 active:scale-[0.98] transition-all duration-200 group",
@@ -15895,14 +16001,14 @@
                                       (0, $.jsx)("div", {
                                         className:
                                           "w-10 h-10 rounded-xl flex items-center justify-center glass-panel ".concat(
-                                            o
+                                            itemDanger
                                               ? "border-red-500/30"
                                               : "border-white/20",
                                           ),
-                                        children: (0, $.jsx)(t, {
+                                        children: (0, $.jsx)(itemIcon, {
                                           size: 18,
                                           className: "".concat(
-                                            o
+                                            itemDanger
                                               ? "text-red-300"
                                               : "text-cyan-300 group-hover:scale-110 transition-transform",
                                           ),
@@ -15914,16 +16020,16 @@
                                           (0, $.jsx)("div", {
                                             className:
                                               "text-xs font-black tracking-wide drop-shadow-md ".concat(
-                                                o
+                                                itemDanger
                                                   ? "text-red-300"
                                                   : "text-white",
                                               ),
-                                            children: l(n),
+                                            children: l(itemLabel),
                                           }),
                                           (0, $.jsx)("div", {
                                             className:
                                               "text-[10px] text-white/50 font-semibold",
-                                            children: r,
+                                            children: itemDesc,
                                           }),
                                         ],
                                       }),
@@ -15934,7 +16040,7 @@
                                       }),
                                     ],
                                   },
-                                  n,
+                                  itemLabel,
                                 );
                               }),
                             }),
@@ -15952,7 +16058,7 @@
                                     (0, $.jsx)("p", {
                                       className:
                                         "text-[10px] text-white/80 font-bold tracking-wider drop-shadow-md",
-                                      children: l("M-Proxy Client v".concat(ce("getAppVersion") || "1.2.0")),
+                                      children: l("M-Proxy Client v".concat(ce("getAppVersion") || "1.2.1")),
                                     }),
                                     (0, $.jsx)("p", {
                                       className:
@@ -16025,15 +16131,20 @@
                                         )));
                                     let e = !1;
                                     try {
-                                      const n = await fetch(
-                                        ""
-                                          .concat(J, "/api?uuid=")
-                                          .concat(b.trim()),
-                                      );
+                                      const apiBase = m && m.domain ? "https://".concat(m.domain, m.domain.includes("mehmetaymaz.com.tr") ? ":2053" : ":8443") : J;
+                                      const n = await fetch(getApiUrl(apiBase, b.trim()));
                                       if (!n.ok)
                                         throw new Error("HTTP " + n.status);
                                       const r = await n.json();
                                       if (r.success) {
+                                        if (r.links && r.links.length > 0) {
+                                          r.links = r.links.map(l => {
+                                            if (l.link && l.link.includes("mehmetaymaz.com.tr")) {
+                                              return { ...l, port: 1453 };
+                                            }
+                                            return l;
+                                          });
+                                        }
                                         if (
                                           r.profile &&
                                           (Je(r.profile),
@@ -16513,26 +16624,216 @@
                                     )
                                   ) {
                                     try {
-                                      const n = await fetch("".concat(J, "/api?uuid=").concat(e));
-                                      if (!n.ok) {
-                                        Nn("Sunucu bağlantı hatası!", "error");
-                                        return;
+                                      const primaryBase =
+                                        m && m.domain
+                                          ? "https://".concat(m.domain, m.domain.includes("mehmetaymaz.com.tr") ? ":2053" : ":8443")
+                                          : J;
+                                      const alternativeBase =
+                                        m &&
+                                        m.domain &&
+                                        m.domain.includes(
+                                          "mehmetaymaz.com.tr",
+                                        )
+                                          ? "https://wmehmet.web.tr:8443"
+                                          : "https://mehmetaymaz.com.tr:2053";
+
+                                      let apiBase = primaryBase;
+                                      let n;
+                                      let r;
+                                      let success = false;
+
+                                      try {
+                                        n = await fetch(
+                                          getApiUrl(apiBase, e),
+                                        );
+                                        if (n.ok) {
+                                          r = await n.json();
+                                          if (r.success) {
+                                            success = true;
+                                            if (
+                                              apiBase.includes(
+                                                "mehmetaymaz.com.tr",
+                                              )
+                                            ) {
+                                              g(te[1453]);
+                                            } else {
+                                              g(te[443]);
+                                            }
+                                          }
+                                        }
+                                      } catch (err) {}
+
+                                      if (!success) {
+                                        apiBase = alternativeBase;
+                                        try {
+                                          n = await fetch(
+                                            getApiUrl(apiBase, e),
+                                          );
+                                          if (n.ok) {
+                                            r = await n.json();
+                                            const isMpanel = apiBase.includes("mehmetaymaz.com.tr");
+                                            if (r.links && r.links.length > 0) {
+                                              r.links = r.links.map((l) => {
+                                                if (
+                                                  l.link &&
+                                                  (isMpanel ||
+                                                   l.link.includes("mehmetaymaz.com.tr") ||
+                                                   l.link.includes("mehmetaymaz.com.tr") ||
+                                                   l.link.includes("185.254.28.210") ||
+                                                   l.port === 1453)
+                                                ) {
+                                                  const updatedLink = l.link.replace(/(@[^:]+):(\d+)/, "$1:1453");
+                                                  return { ...l, port: 1453, link: updatedLink };
+                                                }
+                                                return l;
+                                              });
+                                            }
+                                            if (r.success) {
+                                              success = true;
+                                              if (
+                                                apiBase.includes(
+                                                  "mehmetaymaz.com.tr",
+                                                )
+                                              ) {
+                                                g(te[1453]);
+                                              } else {
+                                                g(te[443]);
+                                              }
+                                            }
+                                          }
+                                        } catch (err) {}
                                       }
-                                      const r = await n.json();
-                                      if (r.success) {
+
+                                      if (success) {
                                         v(e);
                                         try {
                                           localStorage.setItem("mproxy_uuid", e);
                                         } catch (t) {}
                                         Ce(!1);
                                         Nn(a.toastUuidSaved, "success");
-                                        await jn(e);
+                                        const isMpanel = apiBase.includes("mehmetaymaz.com.tr");
+                                        if (r.links && r.links.length > 0) {
+                                          r.links = r.links.map((l) => {
+                                            if (
+                                              l.link &&
+                                              (isMpanel ||
+                                               l.link.includes("mehmetaymaz.com.tr") ||
+                                               l.link.includes("mehmetaymaz.com.tr") ||
+                                               l.link.includes("185.254.28.210") ||
+                                               l.port === 1453)
+                                            ) {
+                                              const updatedLink = l.link.replace(/(@[^:]+):(\d+)/, "$1:1453");
+                                              return { ...l, port: 1453, link: updatedLink };
+                                            }
+                                            return l;
+                                          });
+                                        }
+                                        if (r.links && r.links.length > 0) {
+                                          const ports = r.links
+                                            .map((e) => e.port)
+                                            .filter(Boolean);
+                                          de(ports);
+                                          try {
+                                            localStorage.setItem(
+                                              "mproxy_ports",
+                                              JSON.stringify(ports),
+                                            );
+                                          } catch (t) {}
+
+                                          const mappedServers = r.links.map(
+                                            (item) => {
+                                              const remarkLower = (
+                                                item.remark || ""
+                                              ).toLowerCase();
+                                              let name =
+                                                item.remark ||
+                                                "Port ".concat(item.port);
+                                              let shortName = "VPN";
+                                              let IconComponent = k;
+                                              let color = "#06b6d4";
+
+                                              if (remarkLower.includes("whatsapp")) {
+                                                name = "WHATSAPP SINIRSIZ PAKET";
+                                                shortName = "WHATSAPP";
+                                                IconComponent = q;
+                                                color = "#25D366";
+                                              } else if (remarkLower.includes("youtube")) {
+                                                name = "YOUTUBE SINIRSIZ PAKET";
+                                                shortName = "YOUTUBE";
+                                                IconComponent = Q;
+                                                color = "#FF0000";
+                                              } else if (remarkLower.includes("instagram")) {
+                                                name = "INSTAGRAM SINIRSIZ PAKET";
+                                                shortName = "INSTAGRAM";
+                                                IconComponent = K;
+                                                color = "#E1306C";
+                                              } else if (remarkLower.includes("tiktok")) {
+                                                name = "TIKTOK SINIRSIZ PAKET";
+                                                shortName = "TIKTOK";
+                                                IconComponent = Y;
+                                                color = "#00f2fe";
+                                              } else if (remarkLower.includes("telegram")) {
+                                                shortName = "TELEGRAM";
+                                                color = "#0088cc";
+                                              }
+
+                                              const baseProfile = te[item.port] || {};
+                                              return {
+                                                id: item.port,
+                                                name: baseProfile.name || name,
+                                                shortName: baseProfile.shortName || shortName,
+                                                port: item.port,
+                                                link: item.link,
+                                                IconComponent: baseProfile.IconComponent || IconComponent,
+                                                color: baseProfile.color || color,
+                                                domain: baseProfile.domain,
+                                                sni: baseProfile.sni,
+                                                host: baseProfile.host,
+                                                path: baseProfile.path,
+                                              };
+                                            },
+                                          );
+
+                                          dt(mappedServers);
+
+                                          const selectedPort = apiBase.includes(
+                                            "mehmetaymaz.com.tr",
+                                          )
+                                            ? 1453
+                                            : 443;
+                                          const match =
+                                            mappedServers.find(
+                                              (s) => s.port === selectedPort,
+                                            ) || mappedServers[0];
+                                          g(match);
+                                          try {
+                                            localStorage.setItem(
+                                              "mproxy_selected_port",
+                                              match.port,
+                                            );
+                                          } catch (t) {}
+                                        }
+                                        try {
+                                          localStorage.setItem(
+                                            "cached_vless_data",
+                                            JSON.stringify({
+                                              links: r.links,
+                                              profile: r.profile,
+                                              comment: r.comment || r.email || "---",
+                                              cachedAt: Date.now(),
+                                            }),
+                                          );
+                                        } catch (err) {}
+                                        if (r.profile) {
+                                          Je(r.profile);
+                                        }
+                                        nt(r.comment || r.email || "---");
                                       } else {
                                         Nn(
                                           "tr" === t
                                             ? "Girdiğiniz UUID sistemde kayıtlı değil!"
                                             : "The UUID you entered is not registered!",
-                                          "error"
+                                          "error",
                                         );
                                       }
                                     } catch (err) {

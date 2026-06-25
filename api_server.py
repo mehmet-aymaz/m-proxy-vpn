@@ -122,6 +122,20 @@ class WebServerHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         print(f"[{self.address_string()}] {format % args}")
 
+    # ── YARDIMCI: CORS İZİN KONTROLÜ ─────────────────────────────────────────
+    def is_allowed_origin(self, origin: str) -> bool:
+        if not origin:
+            return False
+        return (
+            origin == "https://wmehmet.web.tr" or
+            origin.endswith(".wmehmet.web.tr") or
+            origin == "https://mehmetaymaz.com.tr" or
+            origin == "https://panel.mehmetaymaz.com.tr" or
+            origin.endswith(".mehmetaymaz.com.tr")
+        )
+
+
+
     # ── YARDIMCI: VLESS LİNKİ OLUŞTUR ────────────────────────────────────────
     def build_vless_link(self, uuid, row_dict, stream, client):
         port = row_dict.get('port')
@@ -190,7 +204,7 @@ class WebServerHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
         origin = self.headers.get('Origin')
-        if origin and (origin == "https://wmehmet.web.tr" or origin.endswith(".wmehmet.web.tr")):
+        if self.is_allowed_origin(origin):
             self.send_header('Access-Control-Allow-Origin', origin)
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, HEAD, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
@@ -211,7 +225,7 @@ class WebServerHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             origin = self.headers.get('Origin')
-            if origin and (origin == "https://wmehmet.web.tr" or origin.endswith(".wmehmet.web.tr")):
+            if self.is_allowed_origin(origin):
                 self.send_header('Access-Control-Allow-Origin', origin)
             self.end_headers()
             self.wfile.write(b'{"ok": true}')
@@ -228,7 +242,7 @@ class WebServerHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             origin = self.headers.get('Origin')
-            if origin and (origin == "https://wmehmet.web.tr" or origin.endswith(".wmehmet.web.tr")):
+            if self.is_allowed_origin(origin):
                 self.send_header('Access-Control-Allow-Origin', origin)
             self.end_headers()
             self.wfile.write(b'{"ok": true}')
@@ -242,7 +256,7 @@ class WebServerHandler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'application/octet-stream')
             self.send_header('Content-Length', str(size))
             origin = self.headers.get('Origin')
-            if origin and (origin == "https://wmehmet.web.tr" or origin.endswith(".wmehmet.web.tr")):
+            if self.is_allowed_origin(origin):
                 self.send_header('Access-Control-Allow-Origin', origin)
             self.send_header('Cache-Control', 'no-store')
             self.end_headers()
@@ -330,7 +344,7 @@ class WebServerHandler(BaseHTTPRequestHandler):
                 self.send_response(429)
                 self.send_header('Content-type', 'application/json; charset=utf-8')
                 origin = self.headers.get('Origin')
-                if origin and (origin == "https://wmehmet.web.tr" or origin.endswith(".wmehmet.web.tr")):
+                if self.is_allowed_origin(origin):
                     self.send_header('Access-Control-Allow-Origin', origin)
                 self.end_headers()
                 response_data = {"success": False, "message": "Çok fazla istek! Lütfen saniyede en fazla 5 istek gönderin. / Too many requests! Please limit to 5 requests per second."}

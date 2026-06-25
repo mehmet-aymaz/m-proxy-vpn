@@ -42,6 +42,8 @@ import android.app.AlertDialog
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.ProgressBar
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
 
 class MainActivity : AppCompatActivity() {
 
@@ -501,7 +503,12 @@ class MainActivity : AppCompatActivity() {
 
         val rootLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.parseColor("#0b132b"))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(Color.parseColor("#D90B132B"))
+                cornerRadius = (32 * resources.displayMetrics.density)
+                setStroke((1 * resources.displayMetrics.density).toInt(), Color.parseColor("#33FFFFFF"))
+            }
             setPadding(24.dp(), 24.dp(), 24.dp(), 24.dp())
             layoutParams = android.view.ViewGroup.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
         }
@@ -565,7 +572,13 @@ class MainActivity : AppCompatActivity() {
         val btnCancel = android.widget.Button(this).apply {
             text = "DAHA SONRA"
             setTextColor(Color.WHITE)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#334155"))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(Color.parseColor("#1AFFFFFF"))
+                cornerRadius = (16 * resources.displayMetrics.density)
+                setStroke((1 * resources.displayMetrics.density).toInt(), Color.parseColor("#22FFFFFF"))
+            }
+            setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
             setOnClickListener { dialog.dismiss() }
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
                 rightMargin = 8.dp()
@@ -577,7 +590,12 @@ class MainActivity : AppCompatActivity() {
             text = "GÜNCELLE"
             setTextColor(Color.BLACK)
             setTypeface(null, android.graphics.Typeface.BOLD)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#C9A84C"))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(Color.parseColor("#C9A84C"))
+                cornerRadius = (16 * resources.displayMetrics.density)
+            }
+            setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
             setOnClickListener {
                 dialog.dismiss()
                 downloadAndInstallApk(apkUrl)
@@ -589,6 +607,17 @@ class MainActivity : AppCompatActivity() {
 
         dialog.setView(rootLayout)
         dialog.show()
+        dialog.window?.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                attributes.blurBehindRadius = 45
+            }
+            val wlp = android.view.WindowManager.LayoutParams()
+            wlp.copyFrom(attributes)
+            wlp.width = (340 * resources.displayMetrics.density).toInt()
+            attributes = wlp
+        }
     }
 
     private fun downloadAndInstallApk(apkUrl: String) {
@@ -597,7 +626,12 @@ class MainActivity : AppCompatActivity() {
 
         val rootLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.parseColor("#0b132b"))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(Color.parseColor("#D90B132B"))
+                cornerRadius = (32 * resources.displayMetrics.density)
+                setStroke((1 * resources.displayMetrics.density).toInt(), Color.parseColor("#33FFFFFF"))
+            }
             setPadding(24.dp(), 24.dp(), 24.dp(), 24.dp())
             layoutParams = android.view.ViewGroup.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
         }
@@ -642,6 +676,17 @@ class MainActivity : AppCompatActivity() {
             .setCancelable(false)
             .create()
         progressDialog.show()
+        progressDialog.window?.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                attributes.blurBehindRadius = 45
+            }
+            val wlp = android.view.WindowManager.LayoutParams()
+            wlp.copyFrom(attributes)
+            wlp.width = (340 * resources.displayMetrics.density).toInt()
+            attributes = wlp
+        }
 
         val executor = Executors.newSingleThreadExecutor()
         val handler = Handler(Looper.getMainLooper())
@@ -752,14 +797,19 @@ class MainActivity : AppCompatActivity() {
 
     fun showDnsSettingsDialog() {
         if (isFinishing || isDestroyed) return
-        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val dialog = AlertDialog.Builder(this).create()
         
         val density = resources.displayMetrics.density
         fun Int.dp(): Int = (this * density).toInt()
 
         val rootLayout = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
-            setBackgroundColor(android.graphics.Color.parseColor("#0b132b"))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(android.graphics.Color.parseColor("#D90B132B"))
+                cornerRadius = (32 * resources.displayMetrics.density)
+                setStroke((1 * resources.displayMetrics.density).toInt(), android.graphics.Color.parseColor("#33FFFFFF"))
+            }
             setPadding(24.dp(), 24.dp(), 24.dp(), 24.dp())
             layoutParams = android.view.ViewGroup.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
@@ -787,19 +837,35 @@ class MainActivity : AppCompatActivity() {
         val dnsOptions = arrayOf("Varsayılan (Google DNS)", "Cloudflare DNS", "AdGuard Adblock DNS", "Özel DNS")
         val dnsModes = arrayOf("GOOGLE", "CLOUDFLARE", "ADGUARD", "CUSTOM")
         
+        val spinnerContainer = android.widget.FrameLayout(this@MainActivity).apply {
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(android.graphics.Color.parseColor("#1AFFFFFF"))
+                cornerRadius = (14 * resources.displayMetrics.density)
+                setStroke((1 * resources.displayMetrics.density).toInt(), android.graphics.Color.parseColor("#22FFFFFF"))
+            }
+            setPadding(12.dp(), 4.dp(), 12.dp(), 4.dp())
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 12.dp()
+            }
+        }
+
         val spinnerDns = android.widget.Spinner(this).apply {
             val customAdapter = object : android.widget.ArrayAdapter<String>(this@MainActivity, android.R.layout.simple_spinner_item, dnsOptions) {
                 override fun getView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
                     val v = super.getView(position, convertView, parent) as android.widget.TextView
                     v.setTextColor(android.graphics.Color.WHITE)
                     v.textSize = 14f
-                    v.setPadding(8.dp(), 8.dp(), 8.dp(), 8.dp())
+                    v.setPadding(0, 8.dp(), 0, 8.dp())
                     return v
                 }
                 override fun getDropDownView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
                     val v = super.getDropDownView(position, convertView, parent) as android.widget.TextView
                     v.setTextColor(android.graphics.Color.WHITE)
-                    v.setBackgroundColor(android.graphics.Color.parseColor("#0b132b"))
+                    v.setBackgroundColor(android.graphics.Color.TRANSPARENT)
                     v.textSize = 14f
                     v.setPadding(16.dp(), 16.dp(), 16.dp(), 16.dp())
                     return v
@@ -810,15 +876,14 @@ class MainActivity : AppCompatActivity() {
             val idx = dnsModes.indexOf(currentDnsMode).takeIf { it >= 0 } ?: 0
             setSelection(idx)
             
-            layoutParams = android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = 12.dp()
-            }
+            layoutParams = android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
+            )
+            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
         }
-        spinnerDns.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
-        rootLayout.addView(spinnerDns)
+        spinnerContainer.addView(spinnerDns)
+        rootLayout.addView(spinnerContainer)
 
         // Custom DNS Input
         val edtCustomDns = android.widget.EditText(this).apply {
@@ -826,11 +891,17 @@ class MainActivity : AppCompatActivity() {
             setHintTextColor(android.graphics.Color.parseColor("#40FFFFFF"))
             setTextColor(android.graphics.Color.WHITE)
             setText(AppSettings.getCustomDnsAddress(this@MainActivity))
-            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(android.graphics.Color.parseColor("#1AFFFFFF"))
+                cornerRadius = (14 * resources.displayMetrics.density)
+                setStroke((1 * resources.displayMetrics.density).toInt(), android.graphics.Color.parseColor("#22FFFFFF"))
+            }
+            setPadding(16.dp(), 12.dp(), 16.dp(), 12.dp())
             visibility = if (AppSettings.getDnsMode(this@MainActivity) == "CUSTOM") android.view.View.VISIBLE else android.view.View.GONE
             layoutParams = android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
                 bottomMargin = 16.dp()
             }
@@ -854,7 +925,12 @@ class MainActivity : AppCompatActivity() {
             text = "AYARLARI KAYDET"
             setTextColor(android.graphics.Color.BLACK)
             setTypeface(null, android.graphics.Typeface.BOLD)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(android.graphics.Color.parseColor("#C9A84C"))
+                cornerRadius = (16 * resources.displayMetrics.density)
+            }
+            setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
             setOnClickListener {
                 val selectedDnsIdx = spinnerDns.selectedItemPosition
                 val dnsMode = dnsModes[selectedDnsIdx]
@@ -873,20 +949,44 @@ class MainActivity : AppCompatActivity() {
         }
         rootLayout.addView(btnSave)
 
-        dialog.setContentView(rootLayout)
+        dialog.setView(rootLayout)
         dialog.show()
+        dialog.window?.apply {
+            setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                attributes.blurBehindRadius = 45
+            }
+            val wlp = android.view.WindowManager.LayoutParams()
+            wlp.copyFrom(attributes)
+            wlp.width = (340 * resources.displayMetrics.density).toInt()
+            attributes = wlp
+        }
+        spinnerDns.post {
+            spinnerDns.setPopupBackgroundDrawable(GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(android.graphics.Color.parseColor("#F20B132B"))
+                cornerRadius = (20 * resources.displayMetrics.density)
+                setStroke((1 * resources.displayMetrics.density).toInt(), android.graphics.Color.parseColor("#33FFFFFF"))
+            })
+        }
     }
 
     fun showPerAppSettingsDialog() {
         if (isFinishing || isDestroyed) return
-        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val dialog = AlertDialog.Builder(this).create()
         
         val density = resources.displayMetrics.density
         fun Int.dp(): Int = (this * density).toInt()
 
         val rootLayout = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
-            setBackgroundColor(android.graphics.Color.parseColor("#0b132b"))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(android.graphics.Color.parseColor("#D90B132B"))
+                cornerRadius = (32 * resources.displayMetrics.density)
+                setStroke((1 * resources.displayMetrics.density).toInt(), android.graphics.Color.parseColor("#33FFFFFF"))
+            }
             setPadding(24.dp(), 24.dp(), 24.dp(), 24.dp())
             layoutParams = android.view.ViewGroup.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
@@ -951,19 +1051,36 @@ class MainActivity : AppCompatActivity() {
         // Mode Spinner
         val modeOptions = arrayOf("Seçilenleri Tünelle (Proxy)", "Seçilenler Hariç (Bypass/Direct)")
         val modeValues = arrayOf("PROXY", "BYPASS")
+        
+        val spinnerContainer = android.widget.FrameLayout(this@MainActivity).apply {
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(android.graphics.Color.parseColor("#1AFFFFFF"))
+                cornerRadius = (14 * resources.displayMetrics.density)
+                setStroke((1 * resources.displayMetrics.density).toInt(), android.graphics.Color.parseColor("#22FFFFFF"))
+            }
+            setPadding(12.dp(), 4.dp(), 12.dp(), 4.dp())
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 12.dp()
+            }
+        }
+
         val spinnerMode = android.widget.Spinner(this).apply {
             val customAdapter = object : android.widget.ArrayAdapter<String>(this@MainActivity, android.R.layout.simple_spinner_item, modeOptions) {
                 override fun getView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
                     val v = super.getView(position, convertView, parent) as android.widget.TextView
                     v.setTextColor(android.graphics.Color.WHITE)
                     v.textSize = 14f
-                    v.setPadding(8.dp(), 8.dp(), 8.dp(), 8.dp())
+                    v.setPadding(0, 8.dp(), 0, 8.dp())
                     return v
                 }
                 override fun getDropDownView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
                     val v = super.getDropDownView(position, convertView, parent) as android.widget.TextView
                     v.setTextColor(android.graphics.Color.WHITE)
-                    v.setBackgroundColor(android.graphics.Color.parseColor("#0b132b"))
+                    v.setBackgroundColor(android.graphics.Color.TRANSPARENT)
                     v.textSize = 14f
                     v.setPadding(16.dp(), 16.dp(), 16.dp(), 16.dp())
                     return v
@@ -973,22 +1090,27 @@ class MainActivity : AppCompatActivity() {
             val currentMode = AppSettings.getPerAppMode(this@MainActivity)
             val idx = modeValues.indexOf(currentMode).takeIf { it >= 0 } ?: 0
             setSelection(idx)
-            layoutParams = android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = 12.dp()
-            }
+            layoutParams = android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
+            )
+            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
         }
-        spinnerMode.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
-        detailsLayout.addView(spinnerMode)
+        spinnerContainer.addView(spinnerMode)
+        detailsLayout.addView(spinnerContainer)
 
         val selectedPackages = AppSettings.getSelectedPackages(this).toMutableSet()
 
         val btnSelectApps = android.widget.Button(this).apply {
             text = "Uygulamaları Seç (${selectedPackages.size} uygulama)"
             setTextColor(android.graphics.Color.WHITE)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#1e293b"))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(android.graphics.Color.parseColor("#1AFFFFFF"))
+                cornerRadius = (16 * resources.displayMetrics.density)
+                setStroke((1 * resources.displayMetrics.density).toInt(), android.graphics.Color.parseColor("#22FFFFFF"))
+            }
+            setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
             setOnClickListener {
                 showAppSelectionDialog(selectedPackages) { newSelection ->
                     selectedPackages.clear()
@@ -1015,7 +1137,12 @@ class MainActivity : AppCompatActivity() {
             text = "AYARLARI KAYDET"
             setTextColor(android.graphics.Color.BLACK)
             setTypeface(null, android.graphics.Typeface.BOLD)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(android.graphics.Color.parseColor("#C9A84C"))
+                cornerRadius = (16 * resources.displayMetrics.density)
+            }
+            setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
             setOnClickListener {
                 AppSettings.setPerAppEnabled(this@MainActivity, switchPerApp.isChecked)
                 val selectedModeIdx = spinnerMode.selectedItemPosition
@@ -1035,8 +1162,27 @@ class MainActivity : AppCompatActivity() {
         }
         rootLayout.addView(btnSave)
 
-        dialog.setContentView(rootLayout)
+        dialog.setView(rootLayout)
         dialog.show()
+        dialog.window?.apply {
+            setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                attributes.blurBehindRadius = 45
+            }
+            val wlp = android.view.WindowManager.LayoutParams()
+            wlp.copyFrom(attributes)
+            wlp.width = (340 * resources.displayMetrics.density).toInt()
+            attributes = wlp
+        }
+        spinnerMode.post {
+            spinnerMode.setPopupBackgroundDrawable(GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(android.graphics.Color.parseColor("#F20B132B"))
+                cornerRadius = (20 * resources.displayMetrics.density)
+                setStroke((1 * resources.displayMetrics.density).toInt(), android.graphics.Color.parseColor("#33FFFFFF"))
+            })
+        }
     }
 
     private fun showAppSelectionDialog(
@@ -1050,7 +1196,7 @@ class MainActivity : AppCompatActivity() {
         val rootLayout = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
             setBackgroundColor(android.graphics.Color.parseColor("#0b132b"))
-            setPadding(16.dp(), 16.dp(), 16.dp(), 16.dp())
+            setPadding(16.dp(), 24.dp(), 16.dp(), 16.dp())
             layoutParams = android.view.ViewGroup.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -1082,7 +1228,13 @@ class MainActivity : AppCompatActivity() {
             hint = "Uygulama veya paket adı ara..."
             setHintTextColor(android.graphics.Color.parseColor("#40FFFFFF"))
             setTextColor(android.graphics.Color.WHITE)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(android.graphics.Color.parseColor("#1AFFFFFF"))
+                cornerRadius = (14 * resources.displayMetrics.density)
+                setStroke((1 * resources.displayMetrics.density).toInt(), android.graphics.Color.parseColor("#22FFFFFF"))
+            }
+            setPadding(16.dp(), 12.dp(), 16.dp(), 12.dp())
             layoutParams = android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
                 android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
@@ -1104,8 +1256,8 @@ class MainActivity : AppCompatActivity() {
         rootLayout.addView(progressBar)
 
         val listView = android.widget.ListView(this).apply {
-            divider = android.graphics.drawable.ColorDrawable(android.graphics.Color.parseColor("#15ffffff"))
-            dividerHeight = 1
+            divider = android.graphics.drawable.ColorDrawable(android.graphics.Color.parseColor("#00000000"))
+            dividerHeight = 0
             cacheColorHint = 0
             visibility = android.view.View.GONE
             layoutParams = android.widget.LinearLayout.LayoutParams(
@@ -1129,7 +1281,13 @@ class MainActivity : AppCompatActivity() {
         val btnCancel = android.widget.Button(this).apply {
             text = "İPTAL"
             setTextColor(android.graphics.Color.WHITE)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#334155"))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(android.graphics.Color.parseColor("#1AFFFFFF"))
+                cornerRadius = (16 * resources.displayMetrics.density)
+                setStroke((1 * resources.displayMetrics.density).toInt(), android.graphics.Color.parseColor("#22FFFFFF"))
+            }
+            setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
             setOnClickListener { dialog.dismiss() }
             layoutParams = android.widget.LinearLayout.LayoutParams(0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
                 rightMargin = 8.dp()
@@ -1143,7 +1301,12 @@ class MainActivity : AppCompatActivity() {
             text = "KAYDET"
             setTextColor(android.graphics.Color.BLACK)
             setTypeface(null, android.graphics.Typeface.BOLD)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(android.graphics.Color.parseColor("#C9A84C"))
+                cornerRadius = (16 * resources.displayMetrics.density)
+            }
+            setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
             setOnClickListener {
                 onSaved(currentSelection)
                 dialog.dismiss()
@@ -1228,69 +1391,86 @@ class AppAdapter(
         fun Int.dpToPx(): Int = (this * density).toInt()
 
         val view = convertView ?: android.widget.LinearLayout(context).apply {
-            orientation = android.widget.LinearLayout.HORIZONTAL
+            orientation = android.widget.LinearLayout.VERTICAL
             layoutParams = android.widget.AbsListView.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                 android.view.ViewGroup.LayoutParams.WRAP_CONTENT
             )
-            setPadding(16.dpToPx(), 12.dpToPx(), 16.dpToPx(), 12.dpToPx())
-            gravity = android.view.Gravity.CENTER_VERTICAL
-            
-            addView(android.widget.ImageView(context).apply {
-                id = android.view.View.generateViewId()
-                layoutParams = android.widget.LinearLayout.LayoutParams(40.dpToPx(), 40.dpToPx()).apply {
-                    rightMargin = 16.dpToPx()
-                }
-            })
+            setPadding(4.dpToPx(), 4.dpToPx(), 4.dpToPx(), 4.dpToPx())
             
             addView(android.widget.LinearLayout(context).apply {
-                orientation = android.widget.LinearLayout.VERTICAL
+                orientation = android.widget.LinearLayout.HORIZONTAL
                 layoutParams = android.widget.LinearLayout.LayoutParams(
-                    0,
-                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
-                    1f
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT
                 )
+                setPadding(16.dpToPx(), 12.dpToPx(), 16.dpToPx(), 12.dpToPx())
+                gravity = android.view.Gravity.CENTER_VERTICAL
                 
-                addView(android.widget.TextView(context).apply {
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    setColor(android.graphics.Color.parseColor("#0Fffffff")) // 6% white glass
+                    cornerRadius = (16 * density)
+                    setStroke((1 * density).toInt(), android.graphics.Color.parseColor("#15ffffff"))
+                }
+                
+                addView(android.widget.ImageView(context).apply {
                     id = android.view.View.generateViewId()
-                    textSize = 16f
-                    setTextColor(android.graphics.Color.WHITE)
-                    maxLines = 1
-                    ellipsize = android.text.TextUtils.TruncateAt.END
+                    layoutParams = android.widget.LinearLayout.LayoutParams(40.dpToPx(), 40.dpToPx()).apply {
+                        rightMargin = 16.dpToPx()
+                    }
                 })
                 
-                addView(android.widget.TextView(context).apply {
-                    id = android.view.View.generateViewId()
-                    textSize = 12f
-                    setTextColor(android.graphics.Color.GRAY)
-                    maxLines = 1
-                    ellipsize = android.text.TextUtils.TruncateAt.END
+                addView(android.widget.LinearLayout(context).apply {
+                    orientation = android.widget.LinearLayout.VERTICAL
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        0,
+                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                        1f
+                    )
+                    
+                    addView(android.widget.TextView(context).apply {
+                        id = android.view.View.generateViewId()
+                        textSize = 16f
+                        setTextColor(android.graphics.Color.WHITE)
+                        maxLines = 1
+                        ellipsize = android.text.TextUtils.TruncateAt.END
+                    })
+                    
+                    addView(android.widget.TextView(context).apply {
+                        id = android.view.View.generateViewId()
+                        textSize = 12f
+                        setTextColor(android.graphics.Color.GRAY)
+                        maxLines = 1
+                        ellipsize = android.text.TextUtils.TruncateAt.END
+                    })
                 })
-            })
-            
-            addView(android.widget.CheckBox(context).apply {
-                id = android.view.View.generateViewId()
-                isFocusable = false
-                isClickable = false
-                buttonTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
+                
+                addView(android.widget.CheckBox(context).apply {
+                    id = android.view.View.generateViewId()
+                    isFocusable = false
+                    isClickable = false
+                    buttonTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
+                })
             })
         }
         
         val app = getItem(position) ?: return view
         
-        val layout = view as android.widget.LinearLayout
-        val imgIcon = layout.getChildAt(0) as android.widget.ImageView
-        val layoutText = layout.getChildAt(1) as android.widget.LinearLayout
+        val outerLayout = view as android.widget.LinearLayout
+        val cardLayout = outerLayout.getChildAt(0) as android.widget.LinearLayout
+        val imgIcon = cardLayout.getChildAt(0) as android.widget.ImageView
+        val layoutText = cardLayout.getChildAt(1) as android.widget.LinearLayout
         val txtLabel = layoutText.getChildAt(0) as android.widget.TextView
         val txtPackage = layoutText.getChildAt(1) as android.widget.TextView
-        val chkSelect = layout.getChildAt(2) as android.widget.CheckBox
+        val chkSelect = cardLayout.getChildAt(2) as android.widget.CheckBox
         
         imgIcon.setImageDrawable(app.icon)
         txtLabel.text = app.label
         txtPackage.text = app.packageName
         chkSelect.isChecked = app.isSelected
         
-        view.setOnClickListener {
+        cardLayout.setOnClickListener {
             app.isSelected = !app.isSelected
             chkSelect.isChecked = app.isSelected
             onCheckChanged(app, app.isSelected)

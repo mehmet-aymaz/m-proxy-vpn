@@ -14159,7 +14159,7 @@
   }
   function getApiUrl(base, uuid) {
     const isMpanel = base.includes("mehmetaymaz.com.tr");
-    const cleanBase = isMpanel ? "https://mehmetaymaz.com.tr" : base;
+    const cleanBase = isMpanel ? "https://panel.mehmetaymaz.com.tr" : base;
     const path = isMpanel ? "/api/api?uuid=" : "/api?uuid=";
     return cleanBase + path + uuid;
   }
@@ -15020,7 +15020,7 @@
       Ln = () =>
         (0, $.jsxs)("div", {
           className:
-            "flex flex-col items-center justify-start gap-1.5 h-full px-4 pb-2 relative z-10 pt-1 overflow-y-auto",
+            "flex flex-col items-center justify-start gap-1.5 flex-1 min-h-0 w-full px-4 pb-2 relative z-10 pt-1 overflow-y-auto",
           children: [
             (0, $.jsxs)("div", {
               className: "flex flex-col items-center gap-0.5 flex-shrink-0",
@@ -15489,7 +15489,7 @@
         const idleStartSub = "tr" === t ? "Testi başlatmak için dokunun" : "Tap to start speed test";
 
         return (0, $.jsxs)("div", {
-          className: "px-4 pb-4 h-full flex flex-col items-center justify-center gap-6 animate-fade-in relative z-10",
+          className: "px-4 pb-4 flex-1 min-h-0 w-full flex flex-col items-center justify-center gap-6 animate-fade-in relative z-10",
           children: [
             (0, $.jsx)("div", {
               className: "flex flex-col items-center justify-center mb-1 flex-shrink-0 w-full min-h-[50px]"
@@ -15738,14 +15738,14 @@
       children: [
         (0, $.jsx)("style", {
           children:
-            "\n        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');\n        * { font-family: 'Outfit', sans-serif; box-sizing: border-box; user-select: none; -webkit-user-select: none; }\n        input, textarea { user-select: text; -webkit-user-select: text; }\n        body { background: #000; margin: 0; padding: 0; }\n        button { background: transparent; border: none; outline: none; padding: 0; margin: 0; cursor: pointer; }\n        .glass-panel {\n          background: rgba(255,255,255,0.03);\n          backdrop-filter: blur(16px);\n          -webkit-backdrop-filter: blur(16px);\n          border: 1px solid rgba(255,255,255,0.1);\n          border-top: 1px solid rgba(255,255,255,0.25);\n          border-left: 1px solid rgba(255,255,255,0.15);\n          box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.15);\n        }\n        .liquid-blob-1 { animation: float-blob 18s ease-in-out infinite alternate; }\n        .liquid-blob-2 { animation: float-blob-reverse 22s ease-in-out infinite alternate; }\n        .liquid-blob-3 { animation: float-blob 15s ease-in-out infinite alternate-reverse; }\n        @keyframes float-blob {\n          0% { transform: translate3d(0,0,0) scale(1) rotate(0deg); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }\n          33% { transform: translate3d(30px,-50px,0) scale(1.1) rotate(15deg); border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%; }\n          66% { transform: translate3d(-20px,20px,0) scale(0.9) rotate(-10deg); border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%; }\n          100% { transform: translate3d(0,0,0) scale(1) rotate(0deg); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }\n        }\n        @keyframes float-blob-reverse {\n          0% { transform: translate3d(0,0,0) scale(1) rotate(0deg); border-radius: 50% 50% 50% 70% / 50% 50% 70% 50%; }\n          50% { transform: translate3d(-40px,40px,0) scale(1.2) rotate(-20deg); border-radius: 80% 30% 50% 50% / 50% 50% 30% 80%; }\n          100% { transform: translate3d(20px,-20px,0) scale(0.8) rotate(10deg); border-radius: 50% 50% 50% 70% / 50% 50% 70% 50%; }\n        }\n        @keyframes ping-slow { 0%,100% { transform: scale(1); opacity: .4; } 50% { transform: scale(1.1); opacity: .1; } }\n        @keyframes ping-slower { 0%,100% { transform: scale(1); opacity: .3; } 50% { transform: scale(1.15); opacity: .03; } }\n        @keyframes slide-down { from { opacity: 0; transform: translate3d(-50%,-20px,0); } to { opacity: 1; transform: translate3d(-50%,0,0); } }\n        @keyframes slide-up { from { opacity: 0; transform: translate3d(0,100%,0); } to { opacity: 1; transform: translate3d(0,0,0); } }\n        @keyframes fade-in { from { opacity: 0; transform: translate3d(0,8px,0); } to { opacity: 1; transform: translate3d(0,0,0); } }\n        @keyframes shimmer { 0% { transform: translate3d(-100%,0,0); } 100% { transform: translate3d(200%,0,0); } }\n        @keyframes modal-in { from { opacity: 0; transform: translate3d(0,-20px,0) scale(0.95); } to { opacity: 1; transform: translate3d(0,0,0) scale(1); } }\n        ::-webkit-scrollbar { width: 0; }\n      ",
+            "\n        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');\n        * { font-family: 'Outfit', sans-serif; box-sizing: border-box; user-select: none; -webkit-user-select: none; }\n        input, textarea { user-select: text; -webkit-user-select: text; }\n        html, body, #root { height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; background: #000; }\n        button { background: transparent; border: none; outline: none; padding: 0; margin: 0; cursor: pointer; }\n        .glass-panel {\n          background: rgba(255,255,255,0.03);\n          backdrop-filter: blur(16px);\n          -webkit-backdrop-filter: blur(16px);\n          border: 1px solid rgba(255,255,255,0.1);\n          border-top: 1px solid rgba(255,255,255,0.25);\n          border-left: 1px solid rgba(255,255,255,0.15);\n          box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.15);\n        }\n        .liquid-blob-1 { animation: float-blob 18s ease-in-out infinite alternate; }\n        .liquid-blob-2 { animation: float-blob-reverse 22s ease-in-out infinite alternate; }\n        .liquid-blob-3 { animation: float-blob 15s ease-in-out infinite alternate-reverse; }\n        @keyframes float-blob {\n          0% { transform: translate3d(0,0,0) scale(1) rotate(0deg); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }\n          33% { transform: translate3d(30px,-50px,0) scale(1.1) rotate(15deg); border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%; }\n          66% { transform: translate3d(-20px,20px,0) scale(0.9) rotate(-10deg); border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%; }\n          100% { transform: translate3d(0,0,0) scale(1) rotate(0deg); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }\n        }\n        @keyframes float-blob-reverse {\n          0% { transform: translate3d(0,0,0) scale(1) rotate(0deg); border-radius: 50% 50% 50% 70% / 50% 50% 70% 50%; }\n          50% { transform: translate3d(-40px,40px,0) scale(1.2) rotate(-20deg); border-radius: 80% 30% 50% 50% / 50% 50% 30% 80%; }\n          100% { transform: translate3d(20px,-20px,0) scale(0.8) rotate(10deg); border-radius: 50% 50% 50% 70% / 50% 50% 70% 50%; }\n        }\n        @keyframes ping-slow { 0%,100% { transform: scale(1); opacity: .4; } 50% { transform: scale(1.1); opacity: .1; } }\n        @keyframes ping-slower { 0%,100% { transform: scale(1); opacity: .3; } 50% { transform: scale(1.15); opacity: .03; } }\n        @keyframes slide-down { from { opacity: 0; transform: translate3d(-50%,-20px,0); } to { opacity: 1; transform: translate3d(-50%,0,0); } }\n        @keyframes slide-up { from { opacity: 0; transform: translate3d(0,100%,0); } to { opacity: 1; transform: translate3d(0,0,0); } }\n        @keyframes fade-in { from { opacity: 0; transform: translate3d(0,8px,0); } to { opacity: 1; transform: translate3d(0,0,0); } }\n        @keyframes shimmer { 0% { transform: translate3d(-100%,0,0); } 100% { transform: translate3d(200%,0,0); } }\n        @keyframes modal-in { from { opacity: 0; transform: translate3d(0,-20px,0) scale(0.95); } to { opacity: 1; transform: translate3d(0,0,0) scale(1); } }\n        ::-webkit-scrollbar { width: 0; }\n      ",
         }),
         (0, $.jsx)("div", {
           className:
-            "min-h-screen w-full flex items-center justify-center p-0 md:p-4 bg-zinc-950",
+            "h-full w-full flex items-center justify-center p-0 md:p-4 bg-zinc-950 overflow-hidden",
           children: (0, $.jsxs)("div", {
             className:
-              "relative w-full max-w-[390px] min-h-screen md:min-h-[812px] md:rounded-[40px] md:border-[10px] md:border-zinc-900 md:shadow-[0_30px_80px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden bg-black",
+              "relative w-full max-w-[390px] h-full md:h-[812px] md:rounded-[40px] md:border-[10px] md:border-zinc-900 md:shadow-[0_30px_80px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden bg-black",
             children: [
               (0, $.jsxs)("div", {
                 className:
@@ -15835,7 +15835,7 @@
                     case "logs":
                       return (0, $.jsxs)("div", {
                         className:
-                          "px-4 pb-4 h-full flex flex-col relative z-10",
+                          "px-4 pb-4 flex-1 min-h-0 w-full flex flex-col relative z-10",
                         children: [
                           (0, $.jsx)("h2", {
                             className:
@@ -15906,11 +15906,6 @@
                             icon: k,
                             label: a.extrasDns,
                             desc: a.extrasDnsDesc,
-                          },
-                          {
-                            icon: R,
-                            label: a.extrasSupport,
-                            desc: a.extrasSupportDesc,
                           },
                           {
                             icon: G,
