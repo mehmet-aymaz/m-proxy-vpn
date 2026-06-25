@@ -29,6 +29,9 @@ def start_systemd_watchdog():
     if not notify_socket or not hasattr(socket, 'AF_UNIX'):
         return
     
+    if notify_socket.startswith('@'):
+        notify_socket = '\0' + notify_socket[1:]
+    
     # Notify systemd that we are ready
     try:
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
@@ -42,6 +45,7 @@ def start_systemd_watchdog():
     # Watchdog loop
     def watchdog_loop():
         while True:
+            time.sleep(10)  # Ping every 10 seconds
             try:
                 sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
                 sock.connect(notify_socket)
@@ -49,7 +53,6 @@ def start_systemd_watchdog():
                 sock.close()
             except Exception:
                 pass
-            time.sleep(10)  # Ping every 10 seconds
 
     t = threading.Thread(target=watchdog_loop, daemon=True, name="SystemdWatchdog")
     t.start()
