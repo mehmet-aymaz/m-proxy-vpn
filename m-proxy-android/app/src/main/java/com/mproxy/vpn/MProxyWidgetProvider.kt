@@ -30,7 +30,7 @@ class MProxyWidgetProvider : AppWidgetProvider() {
         const val ACTION_VPN_TOGGLE = "com.mproxy.vpn.ACTION_VPN_TOGGLE"
         const val ACTION_HOTSPOT_TOGGLE = "com.mproxy.vpn.ACTION_HOTSPOT_TOGGLE"
 
-        private const val API_BASE = "https://wmehmet.web.tr:8443"
+        private const val API_BASE = "https://panel.mehmetaymaz.com.tr:8443"
         private const val PREFS_CACHE = "mproxy_widget_cache"
 
         /**
@@ -237,7 +237,9 @@ class MProxyWidgetProvider : AppWidgetProvider() {
                 val url = URL("$API_BASE/api?uuid=${uuid.trim()}")
                 conn = url.openConnection() as HttpURLConnection
                 if (conn is javax.net.ssl.HttpsURLConnection) {
-                    conn.sslSocketFactory = PinningTrustManager.getSSLSocketFactory()
+                    if (API_BASE.contains("wmehmet.web.tr")) {
+                        conn.sslSocketFactory = PinningTrustManager.getSSLSocketFactory()
+                    }
                 }
                 conn.connectTimeout = 8000
                 conn.readTimeout = 8000

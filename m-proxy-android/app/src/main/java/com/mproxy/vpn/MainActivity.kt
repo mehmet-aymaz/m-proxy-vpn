@@ -29,6 +29,19 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import android.net.Uri
+import android.provider.Settings
+import androidx.core.content.FileProvider
+import java.io.File
+import org.json.JSONObject
+import java.io.FileOutputStream
+import java.util.concurrent.Executors
+import android.os.Handler
+import android.os.Looper
+import android.app.AlertDialog
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.ProgressBar
 
 class MainActivity : AppCompatActivity() {
 
@@ -147,8 +160,7 @@ class MainActivity : AppCompatActivity() {
                 request: WebResourceRequest?
             ): WebResourceResponse? {
                 val url = request?.url?.toString()
-                val targetHost = "wmehmet.web.tr"
-                if (url != null && url.contains(targetHost)) {
+                if (url != null && (url.contains("wmehmet.web.tr") || url.contains("panel.mehmetaymaz.com.tr") || url.contains("mehmetaymaz.com.tr") || url.contains("185.254.28.210"))) {
                     try {
                         if (request.method.equals("OPTIONS", ignoreCase = true)) {
                             val responseHeaders = mapOf(
@@ -170,7 +182,9 @@ class MainActivity : AppCompatActivity() {
                         val urlObj = URL(url)
                         val urlConnection = urlObj.openConnection() as HttpURLConnection
                         if (urlConnection is javax.net.ssl.HttpsURLConnection) {
-                            urlConnection.sslSocketFactory = PinningTrustManager.getSSLSocketFactory()
+                            if (url.contains("wmehmet.web.tr")) {
+                                urlConnection.sslSocketFactory = PinningTrustManager.getSSLSocketFactory()
+                            }
                         }
                         urlConnection.requestMethod = request.method
                         urlConnection.connectTimeout = 10000
@@ -271,6 +285,9 @@ class MainActivity : AppCompatActivity() {
         } else {
             registerReceiver(vpnStateReceiver, filter)
         }
+
+        // Check for updates automatically on startup (silent check)
+        checkAppUpdate(silent = true)
     }
 
     override fun onDestroy() {
@@ -375,5 +392,231 @@ class MainActivity : AppCompatActivity() {
         } else {
             super.onBackPressed()
         }
+    }
+
+    fun checkAppUpdate(silent: Boolean) {
+        val executor = Executors.newSingleThreadExecutor()
+        val handler = Handler(Looper.getMainLooper())
+        
+        val currentVersion = try {
+            val packageInfo = packageManager.getPackageInfo(packageName, 0)
+            packageInfo.versionName ?: "1.1.4"
+        } catch (e: Exception) {
+            "1.1.4"
+        }
+
+        executor.execute {
+            var connection: HttpURLConnection? = null
+            try {
+                val url = URL("https://api.github.com/repos/mehmet-aymaz/m-proxy-vpn/releases/latest")
+                connection = url.openConnection() as HttpURLConnection
+                connection.connectTimeout = 8000
+                connection.readTimeout = 8000
+                connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+                connection.setRequestProperty("User-Agent", "M-Proxy-VPN-Android")
+                connection.connect()
+
+                if (connection.responseCode == 200) {
+                    val responseBody = connection.inputStream.bufferedReader(Charsets.UTF_8).readText()
+                    val json = JSONObject(responseBody)
+                    val latestVersion = json.optString("tag_name", "").replace("v", "").trim()
+                    val changelog = json.optString("body", "")
+                    
+                    val assets = json.optJSONArray("assets")
+                    var apkUrl: String? = null
+                    if (assets != null) {
+                        for (i in 0 until assets.length()) {
+                            val asset = assets.getJSONObject(i)
+                            val name = asset.optString("name", "")
+                            if (name.endsWith(".apk")) {
+                                apkUrl = asset.optString("browser_download_url", "")
+                                break
+                            }
+                        }
+                    }
+
+                    if (latestVersion.isNotEmpty() && apkUrl != null) {
+                        val hasUpdate = isVersionNewer(currentVersion, latestVersion)
+                        if (hasUpdate) {
+                            handler.post {
+                                showUpdateDialog(latestVersion, changelog, apkUrl)
+                            }
+                        } else {
+                            if (!silent) {
+                                handler.post {
+                                    Toast.makeText(this@MainActivity, "Uygulama güncel (v$currentVersion)", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    } else if (!silent) {
+                        handler.post {
+                            Toast.makeText(this@MainActivity, "Güncelleme dosyası bulunamadı.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } else if (!silent) {
+                    handler.post {
+                        Toast.makeText(this@MainActivity, "API Hatası: ${connection.responseCode}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Update check failed: ${e.message}", e)
+                if (!silent) {
+                    handler.post {
+                        Toast.makeText(this@MainActivity, "Bağlantı Hatası: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } finally {
+                connection?.disconnect()
+            }
+        }
+    }
+
+    private fun isVersionNewer(current: String, latest: String): Boolean {
+        val cleanCurrent = current.replace(Regex("[^0-9.]"), "")
+        val cleanLatest = latest.replace(Regex("[^0-9.]"), "")
+        
+        val currentParts = cleanCurrent.split(".").map { it.toIntOrNull() ?: 0 }
+        val latestParts = cleanLatest.split(".").map { it.toIntOrNull() ?: 0 }
+        
+        val maxLength = maxOf(currentParts.size, latestParts.size)
+        for (i in 0 until maxLength) {
+            val curr = currentParts.getOrNull(i) ?: 0
+            val lat = latestParts.getOrNull(i) ?: 0
+            if (lat > curr) return true
+            if (curr > lat) return false
+        }
+        return false
+    }
+
+    private fun showUpdateDialog(latestVersion: String, changelog: String, apkUrl: String) {
+        if (isFinishing || isDestroyed) return
+        AlertDialog.Builder(this)
+            .setTitle("Yeni Güncelleme Mevcut")
+            .setMessage("M-Proxy VPN v$latestVersion sürümü indirilebilir. Şimdi güncellemek ister misiniz?\n\nDeğişiklikler:\n$changelog")
+            .setPositiveButton("Güncelle") { _, _ ->
+                downloadAndInstallApk(apkUrl)
+            }
+            .setNegativeButton("Daha Sonra", null)
+            .show()
+    }
+
+    private fun downloadAndInstallApk(apkUrl: String) {
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(padding, padding, padding, padding)
+        }
+        val textView = TextView(this).apply {
+            text = "Lütfen bekleyin..."
+            setPadding(0, 0, 0, padding / 2)
+        }
+        val progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            isIndeterminate = false
+            max = 100
+        }
+        layout.addView(textView)
+        layout.addView(progressBar)
+
+        val progressDialog = AlertDialog.Builder(this)
+            .setTitle("Güncelleme İndiriliyor")
+            .setView(layout)
+            .setCancelable(false)
+            .create()
+        progressDialog.show()
+
+        val executor = Executors.newSingleThreadExecutor()
+        val handler = Handler(Looper.getMainLooper())
+
+        executor.execute {
+            var connection: HttpURLConnection? = null
+            var inputStream: java.io.InputStream? = null
+            var outputStream: FileOutputStream? = null
+            try {
+                val url = URL(apkUrl)
+                connection = url.openConnection() as HttpURLConnection
+                connection.connectTimeout = 15000
+                connection.readTimeout = 15000
+                connection.connect()
+
+                if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+                    throw Exception("Sunucu hata döndü: ${connection.responseCode}")
+                }
+
+                val fileLength = connection.contentLength
+                inputStream = connection.inputStream
+                val tempFile = File(cacheDir, "update.apk")
+                if (tempFile.exists()) {
+                    tempFile.delete()
+                }
+
+                outputStream = FileOutputStream(tempFile)
+                val data = ByteArray(4096)
+                var total: Long = 0
+                var count: Int
+                while (inputStream.read(data).also { count = it } != -1) {
+                    total += count
+                    if (fileLength > 0) {
+                        val progress = (total * 100 / fileLength).toInt()
+                        val kbDownloaded = total / 1024
+                        val kbTotal = fileLength / 1024
+                        handler.post {
+                            progressBar.progress = progress
+                            textView.text = "İndiriliyor: $kbDownloaded KB / $kbTotal KB ($progress%)"
+                        }
+                    } else {
+                        val kbDownloaded = total / 1024
+                        handler.post {
+                            progressBar.isIndeterminate = true
+                            textView.text = "İndiriliyor: $kbDownloaded KB"
+                        }
+                    }
+                    outputStream.write(data, 0, count)
+                }
+
+                handler.post {
+                    progressDialog.dismiss()
+                    installApk(tempFile)
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Apk download failed: ${e.message}", e)
+                handler.post {
+                    progressDialog.dismiss()
+                    Toast.makeText(this@MainActivity, "İndirme hatası: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            } finally {
+                try { outputStream?.close() } catch (_: Exception) {}
+                try { inputStream?.close() } catch (_: Exception) {}
+                try { connection?.disconnect() } catch (_: Exception) {}
+            }
+        }
+    }
+
+    private fun installApk(file: File) {
+        if (!file.exists()) return
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (!packageManager.canRequestPackageInstalls()) {
+                val settingsIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                    data = Uri.parse("package:$packageName")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                startActivity(settingsIntent)
+                Toast.makeText(this, "Lütfen bilinmeyen uygulamaları yükleme iznini verin ve tekrar deneyin.", Toast.LENGTH_LONG).show()
+                return
+            }
+        }
+
+        val intent = Intent(Intent.ACTION_VIEW)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val authority = "$packageName.fileprovider"
+            val apkUri = FileProvider.getUriForFile(this, authority, file)
+            intent.setDataAndType(apkUri, "application/vnd.android.package-archive")
+        } else {
+            intent.setDataAndType(Uri.fromFile(file), "application/vnd.android.package-archive")
+        }
+
+        startActivity(intent)
     }
 }

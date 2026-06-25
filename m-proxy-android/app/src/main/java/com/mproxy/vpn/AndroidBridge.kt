@@ -246,6 +246,14 @@ class AndroidBridge(private val context: Context) {
     }
 
     @JavascriptInterface
+    fun checkUpdatesManually() {
+        mainHandler.post {
+            val act = context as? MainActivity
+            act?.checkAppUpdate(false)
+        }
+    }
+
+    @JavascriptInterface
     fun getNetworkType() {
         mainHandler.post {
             val type = detectNetworkType()

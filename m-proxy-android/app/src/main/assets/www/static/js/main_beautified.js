@@ -13649,6 +13649,18 @@
         IconComponent: K,
         color: "#E1306C",
       },
+      1453: {
+        id: 4,
+        name: "WHATSAPP SINIRSIZ (M-PANEL)",
+        shortName: "M-PANEL",
+        domain: "panel.mehmetaymaz.com.tr",
+        port: 1453,
+        sni: "c.whatsapp.net",
+        host: "c.whatsapp.net",
+        path: "/",
+        IconComponent: q,
+        color: "#25D366",
+      },
     },
     ne = {
       tr: {
@@ -14055,10 +14067,12 @@
     let t = e.icon,
       n = e.label,
       r = e.value,
-      a = e.accent;
+      a = e.accent,
+      o = e.onClick;
     return (0, $.jsxs)("div", {
+      onClick: o,
       className:
-        "glass-panel rounded-xl p-3 flex flex-col gap-1 h-[60px] justify-center",
+        "glass-panel rounded-xl p-3 flex flex-col gap-1 h-[60px] justify-center " + (o ? "cursor-pointer active:scale-[0.97] transition-all duration-200" : ""),
       children: [
         (0, $.jsxs)("div", {
           className: "flex items-center gap-1.5 drop-shadow-md",
@@ -14389,7 +14403,8 @@
       xn = (0, r.useRef)(null),
       kn = (0, r.useRef)(!1),
       wn = (0, r.useRef)(dn),
-      Sn = (0, r.useRef)(hn);
+      Sn = (0, r.useRef)(hn),
+      selectedServerRef = (0, r.useRef)(null);
     ((0, r.useEffect)(() => {
       wn.current = dn;
     }, [dn]),
@@ -14408,17 +14423,16 @@
                 r = "VPN",
                 a = k,
                 l = "#06b6d4";
-              return (
-                t.includes("whatsapp")
-                  ? ((n = "WHATSAPP SINIRSIZ PAKET"),
-                    (r = "WHATSAPP"),
-                    (a = q),
-                    (l = "#25D366"))
-                  : t.includes("youtube")
-                    ? ((n = "YOUTUBE SINIRSIZ PAKET"),
-                      (r = "YOUTUBE"),
-                      (a = Q),
-                      (l = "#FF0000"))
+              t.includes("whatsapp")
+                ? ((n = "WHATSAPP SINIRSIZ PAKET"),
+                  (r = "WHATSAPP"),
+                  (a = q),
+                  (l = "#25D366"))
+                : t.includes("youtube")
+                  ? ((n = "YOUTUBE SINIRSIZ PAKET"),
+                    (r = "YOUTUBE"),
+                    (a = Q),
+                    (l = "#FF0000"))
                   : t.includes("instagram")
                     ? ((n = "INSTAGRAM SINIRSIZ PAKET"),
                       (r = "INSTAGRAM"),
@@ -14430,17 +14444,27 @@
                         (a = Y),
                         (l = "#00f2fe"))
                       : t.includes("telegram") &&
-                        ((r = "TELEGRAM"), (l = "#0088cc")),
-                {
-                  id: e.port,
-                  name: n,
-                  shortName: r,
-                  port: e.port,
-                  link: e.link,
-                  IconComponent: a,
-                  color: l,
-                }
-              );
+                        ((r = "TELEGRAM"), (l = "#0088cc"));
+              
+              let finalLink = e.link;
+              const isMpanel = e.port === 1453 || (finalLink && (finalLink.includes("mehmetaymaz.com.tr") || finalLink.includes("panel.mehmetaymaz.com.tr") || finalLink.includes("185.254.28.210")));
+              if (finalLink && isMpanel) {
+                finalLink = finalLink.replace(/(@[^:]+):(\d+)/, "$1:1453");
+              }
+              const baseProfile = te[e.port] || {};
+              return {
+                id: e.port,
+                name: baseProfile.name || n,
+                shortName: baseProfile.shortName || r,
+                port: e.port,
+                link: finalLink,
+                IconComponent: baseProfile.IconComponent || a,
+                color: baseProfile.color || l,
+                domain: baseProfile.domain,
+                sni: baseProfile.sni,
+                host: baseProfile.host,
+                path: baseProfile.path,
+              };
             });
             dt(parsedServers);
             g((current) => {
@@ -14448,6 +14472,13 @@
                 const found = parsedServers.find((s) => s.port === current.port);
                 if (found) return found;
               }
+              try {
+                const savedPort = localStorage.getItem("mproxy_selected_port");
+                if (savedPort) {
+                  const found = parsedServers.find((s) => s.port === parseInt(savedPort));
+                  if (found) return found;
+                }
+              } catch (err) {}
               return parsedServers[0];
             });
           }
@@ -14575,10 +14606,30 @@
     const jn = (0, r.useCallback)(async (e) => {
       if (e)
         try {
-          const n = await fetch("".concat(J, "/api?uuid=").concat(e));
+          const currentM = selectedServerRef.current;
+          let apiBase = currentM && currentM.domain ? "https://".concat(currentM.domain, ":8443") : J;
+          if (!currentM) {
+            try {
+              const savedPorts = localStorage.getItem("mproxy_ports");
+              if (savedPorts && savedPorts.includes("1453")) {
+                apiBase = "https://panel.mehmetaymaz.com.tr:8443";
+              }
+            } catch (err) {}
+          }
+          const n = await fetch("".concat(apiBase, "/api?uuid=").concat(e));
           if (!n.ok) return;
           const r = await n.json();
           if (r.success) {
+            if (r.links && r.links.length > 0) {
+              const isMpanel = apiBase.includes("panel.mehmetaymaz.com.tr");
+              r.links = r.links.map(l => {
+                if (l.link && (isMpanel || l.link.includes("mehmetaymaz.com.tr") || l.link.includes("panel.mehmetaymaz.com.tr") || l.link.includes("185.254.28.210") || l.port === 1453)) {
+                  const updatedLink = l.link.replace(/(@[^:]+):(\d+)/, "$1:1453");
+                  return { ...l, port: 1453, link: updatedLink };
+                }
+                return l;
+              });
+            }
             try {
               localStorage.setItem("cached_vless_data", JSON.stringify({
                 links: r.links,
@@ -14600,39 +14651,43 @@
                     r = "VPN",
                     a = k,
                     l = "#06b6d4";
-                  return (
-                    t.includes("whatsapp")
-                      ? ((n = "WHATSAPP SINIRSIZ PAKET"),
-                        (r = "WHATSAPP"),
-                        (a = q),
-                        (l = "#25D366"))
-                      : t.includes("youtube")
-                        ? ((n = "YOUTUBE SINIRSIZ PAKET"),
-                          (r = "YOUTUBE"),
-                          (a = Q),
-                          (l = "#FF0000"))
-                        : t.includes("instagram")
-                          ? ((n = "INSTAGRAM SINIRSIZ PAKET"),
-                            (r = "INSTAGRAM"),
-                            (a = K),
-                            (l = "#E1306C"))
-                          : t.includes("tiktok")
-                            ? ((n = "TIKTOK SINIRSIZ PAKET"),
-                              (r = "TIKTOK"),
-                              (a = Y),
-                              (l = "#00f2fe"))
-                            : t.includes("telegram") &&
-                              ((r = "TELEGRAM"), (l = "#0088cc")),
-                    {
-                      id: e.port,
-                      name: n,
-                      shortName: r,
-                      port: e.port,
-                      link: e.link,
-                      IconComponent: a,
-                      color: l,
-                    }
-                  );
+                  t.includes("whatsapp")
+                    ? ((n = "WHATSAPP SINIRSIZ PAKET"),
+                      (r = "WHATSAPP"),
+                      (a = q),
+                      (l = "#25D366"))
+                    : t.includes("youtube")
+                      ? ((n = "YOUTUBE SINIRSIZ PAKET"),
+                        (r = "YOUTUBE"),
+                        (a = Q),
+                        (l = "#FF0000"))
+                      : t.includes("instagram")
+                        ? ((n = "INSTAGRAM SINIRSIZ PAKET"),
+                          (r = "INSTAGRAM"),
+                          (a = K),
+                          (l = "#E1306C"))
+                        : t.includes("tiktok")
+                          ? ((n = "TIKTOK SINIRSIZ PAKET"),
+                            (r = "TIKTOK"),
+                            (a = Y),
+                            (l = "#00f2fe"))
+                          : t.includes("telegram") &&
+                            ((r = "TELEGRAM"), (l = "#0088cc"));
+                  
+                  const baseProfile = te[e.port] || {};
+                  return {
+                    id: e.port,
+                    name: baseProfile.name || n,
+                    shortName: baseProfile.shortName || r,
+                    port: e.port,
+                    link: e.link,
+                    IconComponent: baseProfile.IconComponent || a,
+                    color: baseProfile.color || l,
+                    domain: baseProfile.domain,
+                    sni: baseProfile.sni,
+                    host: baseProfile.host,
+                    path: baseProfile.path,
+                  };
                 })(e),
               );
               (dt(n),
@@ -14655,7 +14710,7 @@
         } catch (n) {
           // Hata durumunda cache'i ezmemek için sessizce geç
         }
-    }, []);
+    }, [J, dt, de, Je, nt]);
     (0, r.useEffect)(() => {
       const sync = () => {
         const active = ce("isVpnActive");
@@ -14699,7 +14754,7 @@
           { port: 443, host: ee },
           { port: 8080, host: ee },
           { port: 1905, host: ee },
-          { port: 1453, host: ee },
+          { port: 1453, host: "panel.mehmetaymaz.com.tr" },
         ];
         e.forEach((e) => ce("pingServer", e.host, e.port));
         const t = setInterval(() => {
@@ -14712,10 +14767,20 @@
           if (Z.length > 0) {
             const e = Z.map((e) => te[e]).filter(Boolean),
               t = e.length > 0 ? e : [te[443]];
-            (dt(t), g(t[0]));
+            dt(t);
+            let selected = t[0];
+            try {
+              const savedPort = localStorage.getItem("mproxy_selected_port");
+              if (savedPort) {
+                const found = t.find((s) => s.port === parseInt(savedPort));
+                if (found) selected = found;
+              }
+            } catch (err) {}
+            g(selected);
           } else {
             const e = [te[443], te[8080]];
-            (dt(e), g(e[0]));
+            dt(e);
+            g(e[0]);
           }
       }, [Z, ct]),
       (0, r.useEffect)(
@@ -14736,6 +14801,14 @@
         ),
         [pe],
       ),
+      (0, r.useEffect)(() => {
+        selectedServerRef.current = m;
+        if (m && m.port) {
+          try {
+            localStorage.setItem("mproxy_selected_port", m.port);
+          } catch (e) {}
+        }
+      }, [m]),
       (0, r.useEffect)(() => {
         xn.current && xn.current.scrollIntoView({ behavior: "smooth" });
       }, [Ve, ge]));
@@ -14812,13 +14885,24 @@
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
         try {
-          const n = await fetch("".concat(J, "/api?uuid=").concat(b.trim()), {
+          const apiBase = m && m.domain ? "https://".concat(m.domain, ":8443") : J;
+          const n = await fetch("".concat(apiBase, "/api?uuid=").concat(b.trim()), {
             signal: controller.signal
           });
           clearTimeout(timeoutId);
           if (!n.ok) throw new Error("HTTP " + n.status);
           const r = await n.json();
           if (r.success) {
+            const isMpanel = apiBase.includes("panel.mehmetaymaz.com.tr") || (m && m.port === 1453);
+            if (r.links && r.links.length > 0) {
+              r.links = r.links.map(l => {
+                if (l.link && (isMpanel || l.link.includes("mehmetaymaz.com.tr") || l.link.includes("panel.mehmetaymaz.com.tr") || l.link.includes("185.254.28.210") || l.port === 1453)) {
+                  const updatedLink = l.link.replace(/(@[^:]+):(\d+)/, "$1:1453");
+                  return { ...l, port: 1453, link: updatedLink };
+                }
+                return l;
+              });
+            }
             try {
               localStorage.setItem("cached_vless_data", JSON.stringify({
                 links: r.links,
@@ -14845,8 +14929,11 @@
                 (e) =>
                   e.port ===
                   ((null === m || void 0 === m ? void 0 : m.port) || 443),
-              ),
-              aLink = n ? n.link : r.link;
+              );
+            let aLink = n ? n.link : r.link;
+            if (aLink && (isMpanel || aLink.includes("mehmetaymaz.com.tr") || aLink.includes("panel.mehmetaymaz.com.tr") || aLink.includes("185.254.28.210"))) {
+              aLink = aLink.replace(/(@[^:]+):(\d+)/, "$1:1453");
+            }
             aLink
               ? (Cn(
                   "tr" === t
@@ -14874,7 +14961,11 @@
                 const n = (data.links || []).find(
                   (e) => e.port === ((null === m || void 0 === m ? void 0 : m.port) || 443)
                 );
-                const aLink = n ? n.link : data.links[0].link;
+                let aLink = n ? n.link : data.links[0].link;
+                const isMpanelFallback = (m && m.port === 1453) || (aLink && (aLink.includes("mehmetaymaz.com.tr") || aLink.includes("panel.mehmetaymaz.com.tr") || aLink.includes("185.254.28.210")));
+                if (aLink && isMpanelFallback) {
+                  aLink = aLink.replace(/(@[^:]+):(\d+)/, "$1:1453");
+                }
                 if (aLink) {
                   Cn(
                     "tr" === t
@@ -15257,6 +15348,9 @@
                   label: l(a.statVersion),
                   value: "v1.1.4",
                   accent: "text-cyan-300",
+                  onClick: () => {
+                    ce("checkUpdatesManually");
+                  },
                 }),
               ],
             }),
@@ -16003,15 +16097,24 @@
                                         )));
                                     let e = !1;
                                     try {
+                                      const apiBase = m && m.domain ? "https://".concat(m.domain, ":8443") : J;
                                       const n = await fetch(
                                         ""
-                                          .concat(J, "/api?uuid=")
+                                          .concat(apiBase, "/api?uuid=")
                                           .concat(b.trim()),
                                       );
                                       if (!n.ok)
                                         throw new Error("HTTP " + n.status);
                                       const r = await n.json();
                                       if (r.success) {
+                                        if (r.links && r.links.length > 0) {
+                                          r.links = r.links.map(l => {
+                                            if (l.link && l.link.includes("panel.mehmetaymaz.com.tr")) {
+                                              return { ...l, port: 1453 };
+                                            }
+                                            return l;
+                                          });
+                                        }
                                         if (
                                           r.profile &&
                                           (Je(r.profile),
@@ -16491,26 +16594,216 @@
                                     )
                                   ) {
                                     try {
-                                      const n = await fetch("".concat(J, "/api?uuid=").concat(e));
-                                      if (!n.ok) {
-                                        Nn("Sunucu bağlantı hatası!", "error");
-                                        return;
+                                      const primaryBase =
+                                        m && m.domain
+                                          ? "https://".concat(m.domain, ":8443")
+                                          : J;
+                                      const alternativeBase =
+                                        m &&
+                                        m.domain &&
+                                        m.domain.includes(
+                                          "panel.mehmetaymaz.com.tr",
+                                        )
+                                          ? "https://wmehmet.web.tr:8443"
+                                          : "https://panel.mehmetaymaz.com.tr:8443";
+
+                                      let apiBase = primaryBase;
+                                      let n;
+                                      let r;
+                                      let success = false;
+
+                                      try {
+                                        n = await fetch(
+                                          "".concat(apiBase, "/api?uuid=").concat(e),
+                                        );
+                                        if (n.ok) {
+                                          r = await n.json();
+                                          if (r.success) {
+                                            success = true;
+                                            if (
+                                              apiBase.includes(
+                                                "panel.mehmetaymaz.com.tr",
+                                              )
+                                            ) {
+                                              g(te[1453]);
+                                            } else {
+                                              g(te[443]);
+                                            }
+                                          }
+                                        }
+                                      } catch (err) {}
+
+                                      if (!success) {
+                                        apiBase = alternativeBase;
+                                        try {
+                                          n = await fetch(
+                                            "".concat(apiBase, "/api?uuid=").concat(e),
+                                          );
+                                          if (n.ok) {
+                                            r = await n.json();
+                                            const isMpanel = apiBase.includes("panel.mehmetaymaz.com.tr");
+                                            if (r.links && r.links.length > 0) {
+                                              r.links = r.links.map((l) => {
+                                                if (
+                                                  l.link &&
+                                                  (isMpanel ||
+                                                   l.link.includes("mehmetaymaz.com.tr") ||
+                                                   l.link.includes("panel.mehmetaymaz.com.tr") ||
+                                                   l.link.includes("185.254.28.210") ||
+                                                   l.port === 1453)
+                                                ) {
+                                                  const updatedLink = l.link.replace(/(@[^:]+):(\d+)/, "$1:1453");
+                                                  return { ...l, port: 1453, link: updatedLink };
+                                                }
+                                                return l;
+                                              });
+                                            }
+                                            if (r.success) {
+                                              success = true;
+                                              if (
+                                                apiBase.includes(
+                                                  "panel.mehmetaymaz.com.tr",
+                                                )
+                                              ) {
+                                                g(te[1453]);
+                                              } else {
+                                                g(te[443]);
+                                              }
+                                            }
+                                          }
+                                        } catch (err) {}
                                       }
-                                      const r = await n.json();
-                                      if (r.success) {
+
+                                      if (success) {
                                         v(e);
                                         try {
                                           localStorage.setItem("mproxy_uuid", e);
                                         } catch (t) {}
                                         Ce(!1);
                                         Nn(a.toastUuidSaved, "success");
-                                        await jn(e);
+                                        const isMpanel = apiBase.includes("panel.mehmetaymaz.com.tr");
+                                        if (r.links && r.links.length > 0) {
+                                          r.links = r.links.map((l) => {
+                                            if (
+                                              l.link &&
+                                              (isMpanel ||
+                                               l.link.includes("mehmetaymaz.com.tr") ||
+                                               l.link.includes("panel.mehmetaymaz.com.tr") ||
+                                               l.link.includes("185.254.28.210") ||
+                                               l.port === 1453)
+                                            ) {
+                                              const updatedLink = l.link.replace(/(@[^:]+):(\d+)/, "$1:1453");
+                                              return { ...l, port: 1453, link: updatedLink };
+                                            }
+                                            return l;
+                                          });
+                                        }
+                                        if (r.links && r.links.length > 0) {
+                                          const ports = r.links
+                                            .map((e) => e.port)
+                                            .filter(Boolean);
+                                          de(ports);
+                                          try {
+                                            localStorage.setItem(
+                                              "mproxy_ports",
+                                              JSON.stringify(ports),
+                                            );
+                                          } catch (t) {}
+
+                                          const mappedServers = r.links.map(
+                                            (item) => {
+                                              const remarkLower = (
+                                                item.remark || ""
+                                              ).toLowerCase();
+                                              let name =
+                                                item.remark ||
+                                                "Port ".concat(item.port);
+                                              let shortName = "VPN";
+                                              let IconComponent = k;
+                                              let color = "#06b6d4";
+
+                                              if (remarkLower.includes("whatsapp")) {
+                                                name = "WHATSAPP SINIRSIZ PAKET";
+                                                shortName = "WHATSAPP";
+                                                IconComponent = q;
+                                                color = "#25D366";
+                                              } else if (remarkLower.includes("youtube")) {
+                                                name = "YOUTUBE SINIRSIZ PAKET";
+                                                shortName = "YOUTUBE";
+                                                IconComponent = Q;
+                                                color = "#FF0000";
+                                              } else if (remarkLower.includes("instagram")) {
+                                                name = "INSTAGRAM SINIRSIZ PAKET";
+                                                shortName = "INSTAGRAM";
+                                                IconComponent = K;
+                                                color = "#E1306C";
+                                              } else if (remarkLower.includes("tiktok")) {
+                                                name = "TIKTOK SINIRSIZ PAKET";
+                                                shortName = "TIKTOK";
+                                                IconComponent = Y;
+                                                color = "#00f2fe";
+                                              } else if (remarkLower.includes("telegram")) {
+                                                shortName = "TELEGRAM";
+                                                color = "#0088cc";
+                                              }
+
+                                              const baseProfile = te[item.port] || {};
+                                              return {
+                                                id: item.port,
+                                                name: baseProfile.name || name,
+                                                shortName: baseProfile.shortName || shortName,
+                                                port: item.port,
+                                                link: item.link,
+                                                IconComponent: baseProfile.IconComponent || IconComponent,
+                                                color: baseProfile.color || color,
+                                                domain: baseProfile.domain,
+                                                sni: baseProfile.sni,
+                                                host: baseProfile.host,
+                                                path: baseProfile.path,
+                                              };
+                                            },
+                                          );
+
+                                          dt(mappedServers);
+
+                                          const selectedPort = apiBase.includes(
+                                            "panel.mehmetaymaz.com.tr",
+                                          )
+                                            ? 1453
+                                            : 443;
+                                          const match =
+                                            mappedServers.find(
+                                              (s) => s.port === selectedPort,
+                                            ) || mappedServers[0];
+                                          g(match);
+                                          try {
+                                            localStorage.setItem(
+                                              "mproxy_selected_port",
+                                              match.port,
+                                            );
+                                          } catch (t) {}
+                                        }
+                                        try {
+                                          localStorage.setItem(
+                                            "cached_vless_data",
+                                            JSON.stringify({
+                                              links: r.links,
+                                              profile: r.profile,
+                                              comment: r.comment || r.email || "---",
+                                              cachedAt: Date.now(),
+                                            }),
+                                          );
+                                        } catch (err) {}
+                                        if (r.profile) {
+                                          Je(r.profile);
+                                        }
+                                        nt(r.comment || r.email || "---");
                                       } else {
                                         Nn(
                                           "tr" === t
                                             ? "Girdiğiniz UUID sistemde kayıtlı değil!"
                                             : "The UUID you entered is not registered!",
-                                          "error"
+                                          "error",
                                         );
                                       }
                                     } catch (err) {
