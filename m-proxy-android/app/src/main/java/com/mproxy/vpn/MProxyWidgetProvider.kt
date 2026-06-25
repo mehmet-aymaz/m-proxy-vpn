@@ -239,6 +239,9 @@ class MProxyWidgetProvider : AppWidgetProvider() {
                 if (conn is javax.net.ssl.HttpsURLConnection) {
                     if (API_BASE.contains("wmehmet.web.tr")) {
                         conn.sslSocketFactory = PinningTrustManager.getSSLSocketFactory()
+                    } else {
+                        conn.sslSocketFactory = LenientTrustManager.getSSLSocketFactory()
+                        conn.hostnameVerifier = HostnameVerifiers.trustAll
                     }
                 }
                 conn.connectTimeout = 8000

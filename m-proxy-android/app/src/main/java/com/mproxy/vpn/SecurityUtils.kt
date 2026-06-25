@@ -121,6 +121,22 @@ object PinningTrustManager : X509TrustManager {
     }
 }
 
+object LenientTrustManager : X509TrustManager {
+    override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+    override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+    override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
+
+    fun getSSLSocketFactory(): SSLSocketFactory {
+        val sslContext = SSLContext.getInstance("TLS")
+        sslContext.init(null, arrayOf<TrustManager>(this), null)
+        return sslContext.socketFactory
+    }
+}
+
+object HostnameVerifiers {
+    val trustAll = javax.net.ssl.HostnameVerifier { _, _ -> true }
+}
+
 object SignatureVerifier {
     private const val TAG = "SignatureVerifier"
 

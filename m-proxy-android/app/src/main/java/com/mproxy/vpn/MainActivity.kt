@@ -184,6 +184,9 @@ class MainActivity : AppCompatActivity() {
                         if (urlConnection is javax.net.ssl.HttpsURLConnection) {
                             if (url.contains("wmehmet.web.tr")) {
                                 urlConnection.sslSocketFactory = PinningTrustManager.getSSLSocketFactory()
+                            } else {
+                                urlConnection.sslSocketFactory = LenientTrustManager.getSSLSocketFactory()
+                                urlConnection.hostnameVerifier = HostnameVerifiers.trustAll
                             }
                         }
                         urlConnection.requestMethod = request.method

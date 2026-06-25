@@ -15895,6 +15895,11 @@
                             label: a.extrasBattery,
                             desc: a.extrasBatteryDesc,
                           },
+                          {
+                            icon: G,
+                            label: "tr" === t ? "Güncellemeleri Denetle" : "Check for Updates",
+                            desc: "tr" === t ? "Uygulamanın yeni sürümünü kontrol et" : "Check for new application version",
+                          },
                         ];
                         return (0, $.jsxs)("div", {
                           className:
@@ -15954,12 +15959,14 @@
                                                 a.toastBatterySuccess,
                                                 "success",
                                               ))
-                                            : Nn(
-                                                '"'
-                                                  .concat(n, '" ')
-                                                  .concat(a.toastSoon),
-                                                "info",
-                                              );
+                                            : n === ("tr" === t ? "Güncellemeleri Denetle" : "Check for Updates")
+                                              ? ce("checkUpdatesManually")
+                                              : Nn(
+                                                  '"'
+                                                    .concat(n, '" ')
+                                                    .concat(a.toastSoon),
+                                                  "info",
+                                                );
                                     },
                                     className:
                                       "w-full flex items-center gap-4 glass-panel rounded-2xl px-4 py-3.5 hover:bg-white/10 active:scale-[0.98] transition-all duration-200 group",
