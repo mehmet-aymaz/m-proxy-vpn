@@ -11,16 +11,5 @@
         android:scrollbars="none"
         android:overScrollMode="never" />
 
-    <ImageButton
-        android:id="@+id/btn_settings"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_gravity="top|end"
-        android:layout_marginTop="40dp"
-        android:layout_marginEnd="16dp"
-        android:background="@drawable/bg_settings_button"
-        android:src="@android:drawable/ic_menu_preferences"
-        android:tint="#C9A84C"
-        android:contentDescription="Settings" />
-
 </FrameLayout>
+

@@ -104,19 +104,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webview)
-
-        val btnSettings = findViewById<android.widget.ImageButton>(R.id.btn_settings)
-        btnSettings.setOnClickListener {
-            showSettingsDialog()
-        }
-        ViewCompat.setOnApplyWindowInsetsListener(btnSettings) { view, insets ->
-            val statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            val params = view.layoutParams as android.widget.FrameLayout.LayoutParams
-            val extraMargin = (16 * view.resources.displayMetrics.density).toInt()
-            params.topMargin = statusBarInsets.top + extraMargin
-            view.layoutParams = params
-            insets
-        }
         
         webView.settings.apply {
             javaScriptEnabled = true
@@ -762,7 +749,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showSettingsDialog() {
+    fun showDnsSettingsDialog() {
+        if (isFinishing || isDestroyed) return
         val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
         
         val density = resources.displayMetrics.density
@@ -780,7 +768,7 @@ class MainActivity : AppCompatActivity() {
 
         // Title
         val txtTitle = android.widget.TextView(this).apply {
-            text = "M-Proxy Gelişmiş Ayarlar"
+            text = "Gelişmiş DNS Ayarları"
             textSize = 20f
             setTypeface(null, android.graphics.Typeface.BOLD)
             setTextColor(android.graphics.Color.parseColor("#C9A84C"))
@@ -793,21 +781,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
         rootLayout.addView(txtTitle)
-
-        // DNS Section Label
-        val lblDns = android.widget.TextView(this).apply {
-            text = "Gelişmiş DNS Ayarları"
-            textSize = 14f
-            setTypeface(null, android.graphics.Typeface.BOLD)
-            setTextColor(android.graphics.Color.parseColor("#80FFFFFF"))
-            layoutParams = android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = 8.dp()
-            }
-        }
-        rootLayout.addView(lblDns)
 
         // DNS Spinner
         val dnsOptions = arrayOf("Varsayılan (Google DNS)", "Cloudflare DNS", "AdGuard Adblock DNS", "Özel DNS")
@@ -862,33 +835,66 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
         }
 
-        // Divider
-        val divider = android.view.View(this).apply {
-            setBackgroundColor(android.graphics.Color.parseColor("#20FFFFFF"))
-            layoutParams = android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                1.dp()
-            ).apply {
-                topMargin = 8.dp()
-                bottomMargin = 16.dp()
-            }
-        }
-        rootLayout.addView(divider)
-
-        // Per-App Section Label
-        val lblPerApp = android.widget.TextView(this).apply {
-            text = "Uygulama Bazlı Tünelleme"
-            textSize = 14f
+        // Save Button
+        val btnSave = android.widget.Button(this).apply {
+            text = "AYARLARI KAYDET"
+            setTextColor(android.graphics.Color.BLACK)
             setTypeface(null, android.graphics.Typeface.BOLD)
-            setTextColor(android.graphics.Color.parseColor("#80FFFFFF"))
+            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
+            setOnClickListener {
+                val selectedDnsIdx = spinnerDns.selectedItemPosition
+                val dnsMode = dnsModes[selectedDnsIdx]
+                AppSettings.setDnsMode(this@MainActivity, dnsMode)
+                AppSettings.setCustomDnsAddress(this@MainActivity, edtCustomDns.text.toString().trim())
+
+                dialog.dismiss()
+                Toast.makeText(this@MainActivity, "DNS ayarları kaydedildi. Geçerli olması için bağlantıyı yenileyin.", Toast.LENGTH_LONG).show()
+            }
             layoutParams = android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
                 android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                bottomMargin = 8.dp()
+                topMargin = 8.dp()
             }
         }
-        rootLayout.addView(lblPerApp)
+        rootLayout.addView(btnSave)
+
+        dialog.setContentView(rootLayout)
+        dialog.show()
+    }
+
+    fun showPerAppSettingsDialog() {
+        if (isFinishing || isDestroyed) return
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        
+        val density = resources.displayMetrics.density
+        fun Int.dp(): Int = (this * density).toInt()
+
+        val rootLayout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setBackgroundColor(android.graphics.Color.parseColor("#0b132b"))
+            setPadding(24.dp(), 24.dp(), 24.dp(), 24.dp())
+            layoutParams = android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        // Title
+        val txtTitle = android.widget.TextView(this).apply {
+            text = "Uygulama Bazlı Tünelleme"
+            textSize = 20f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(android.graphics.Color.parseColor("#C9A84C"))
+            gravity = android.view.Gravity.CENTER
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 16.dp()
+            }
+        }
+        rootLayout.addView(txtTitle)
 
         // Switch layout
         val perAppLayout = android.widget.LinearLayout(this).apply {
@@ -982,11 +988,6 @@ class MainActivity : AppCompatActivity() {
             setTypeface(null, android.graphics.Typeface.BOLD)
             backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
             setOnClickListener {
-                val selectedDnsIdx = spinnerDns.selectedItemPosition
-                val dnsMode = dnsModes[selectedDnsIdx]
-                AppSettings.setDnsMode(this@MainActivity, dnsMode)
-                AppSettings.setCustomDnsAddress(this@MainActivity, edtCustomDns.text.toString().trim())
-
                 AppSettings.setPerAppEnabled(this@MainActivity, switchPerApp.isChecked)
                 val selectedModeIdx = spinnerMode.selectedItemPosition
                 val perAppMode = modeValues[selectedModeIdx]
@@ -994,7 +995,7 @@ class MainActivity : AppCompatActivity() {
                 AppSettings.setSelectedPackages(this@MainActivity, selectedPackages)
 
                 dialog.dismiss()
-                Toast.makeText(this@MainActivity, "Ayarlar kaydedildi. Geçerli olması için bağlantıyı yenileyin.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@MainActivity, "Tünelleme ayarları kaydedildi. Geçerli olması için bağlantıyı yenileyin.", Toast.LENGTH_LONG).show()
             }
             layoutParams = android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,

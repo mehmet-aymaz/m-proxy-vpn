@@ -13704,6 +13704,10 @@
           "Arka plan k\u0131s\u0131tlamalar\u0131n\u0131 devre d\u0131\u015f\u0131 b\u0131rak",
         extrasHotspot: "Hotspot (VPN)",
         extrasHotspotDesc: "Harici Wi-Fi ile VPN'i payla\u015f\u0131n",
+        extrasDns: "Geli\u015fmi\u015f DNS Ayarlar\u0131",
+        extrasDnsDesc: "\xd6zel DNS ve Reklam Engelleyici ayarlar\u0131n\u0131 yap\u0131n",
+        extrasPerApp: "Uygulama Bazl\u0131 T\xfcnelleme",
+        extrasPerAppDesc: "Hangi uygulamalar\u0131n VPN kullanaca\u011f\u0131n\u0131 se\xe7in",
         extrasVersionInfo: "VLESS / WS / TLS \xb7 sing-box motoru",
         credHeader: "KAYITLI KIMLIK",
         credSubHeader: "UUID YAPILANDIRMASI",
@@ -13786,6 +13790,10 @@
         extrasBatteryDesc: "Disable background limits",
         extrasHotspot: "Hotspot (VPN)",
         extrasHotspotDesc: "Share VPN via External Wi-Fi",
+        extrasDns: "Advanced DNS Settings",
+        extrasDnsDesc: "Configure custom DNS and AdBlock",
+        extrasPerApp: "Per-App Tunneling",
+        extrasPerAppDesc: "Select which apps route through VPN",
         extrasVersionInfo: "VLESS / WS / TLS \xb7 sing-box engine",
         credHeader: "SAVED IDENTITY",
         credSubHeader: "UUID CONFIGURATION",
@@ -15350,7 +15358,7 @@
                 (0, $.jsx)(ie, {
                   icon: G,
                   label: l(a.statVersion),
-                  value: "v1.1.4",
+                  value: "v".concat(ce("getAppVersion") || "1.2.0"),
                   accent: "text-cyan-300",
                   onClick: () => {
                     ce("checkUpdatesManually");
@@ -15884,6 +15892,16 @@
                             desc: a.extrasHotspotDesc,
                           },
                           {
+                            icon: k,
+                            label: a.extrasDns,
+                            desc: a.extrasDnsDesc,
+                          },
+                          {
+                            icon: P,
+                            label: a.extrasPerApp,
+                            desc: a.extrasPerAppDesc,
+                          },
+                          {
                             icon: R,
                             label: a.extrasSupport,
                             desc: a.extrasSupportDesc,
@@ -15963,14 +15981,18 @@
                                                 a.toastBatterySuccess,
                                                 "success",
                                               ))
-                                            : itemLabel === ("tr" === t ? "Güncellemeleri Denetle" : "Check for Updates")
-                                              ? ce("checkUpdatesManually")
-                                              : Nn(
-                                                  '"'
-                                                    .concat(itemLabel, '" ')
-                                                    .concat(a.toastSoon),
-                                                  "info",
-                                                );
+                                            : itemLabel === a.extrasDns
+                                              ? ce("openDnsSettings")
+                                              : itemLabel === a.extrasPerApp
+                                                ? ce("openPerAppSettings")
+                                                : itemLabel === ("tr" === t ? "Güncellemeleri Denetle" : "Check for Updates")
+                                                  ? ce("checkUpdatesManually")
+                                                  : Nn(
+                                                      '"'
+                                                        .concat(itemLabel, '" ')
+                                                        .concat(a.toastSoon),
+                                                      "info",
+                                                    );
                                     },
                                     className:
                                       "w-full flex items-center gap-4 glass-panel rounded-2xl px-4 py-3.5 hover:bg-white/10 active:scale-[0.98] transition-all duration-200 group",
@@ -16035,7 +16057,7 @@
                                     (0, $.jsx)("p", {
                                       className:
                                         "text-[10px] text-white/80 font-bold tracking-wider drop-shadow-md",
-                                      children: l("M-Proxy Client v1.1.4"),
+                                      children: l("M-Proxy Client v".concat(ce("getAppVersion") || "1.2.0")),
                                     }),
                                     (0, $.jsx)("p", {
                                       className:

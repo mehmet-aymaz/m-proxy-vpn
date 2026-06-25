@@ -708,6 +708,32 @@ class AndroidBridge(private val context: Context) {
         }
     }
 
+    @JavascriptInterface
+    fun openDnsSettings() {
+        Log.d("AndroidBridge", "openDnsSettings called")
+        mainHandler.post {
+            (context as? MainActivity)?.showDnsSettingsDialog()
+        }
+    }
+
+    @JavascriptInterface
+    fun openPerAppSettings() {
+        Log.d("AndroidBridge", "openPerAppSettings called")
+        mainHandler.post {
+            (context as? MainActivity)?.showPerAppSettingsDialog()
+        }
+    }
+
+    @JavascriptInterface
+    fun getAppVersion(): String {
+        return try {
+            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            packageInfo.versionName ?: "1.2.0"
+        } catch (e: Exception) {
+            "1.2.0"
+        }
+    }
+
     companion object {
         @Volatile
         var hotspotReservation: android.net.wifi.WifiManager.LocalOnlyHotspotReservation? = null
