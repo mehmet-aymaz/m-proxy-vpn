@@ -30,7 +30,7 @@ class MProxyWidgetProvider : AppWidgetProvider() {
         const val ACTION_VPN_TOGGLE = "com.mproxy.vpn.ACTION_VPN_TOGGLE"
         const val ACTION_HOTSPOT_TOGGLE = "com.mproxy.vpn.ACTION_HOTSPOT_TOGGLE"
 
-        private const val API_BASE = "https://panel.mehmetaymaz.com.tr:8443"
+        private const val API_BASE = "https://mehmetaymaz.com.tr:8443"
         private const val PREFS_CACHE = "mproxy_widget_cache"
 
         /**

@@ -13653,7 +13653,7 @@
         id: 4,
         name: "WHATSAPP SINIRSIZ (M-PANEL)",
         shortName: "M-PANEL",
-        domain: "panel.mehmetaymaz.com.tr",
+        domain: "mehmetaymaz.com.tr",
         port: 1453,
         sni: "c.whatsapp.net",
         host: "c.whatsapp.net",
@@ -14447,7 +14447,7 @@
                         ((r = "TELEGRAM"), (l = "#0088cc"));
               
               let finalLink = e.link;
-              const isMpanel = e.port === 1453 || (finalLink && (finalLink.includes("mehmetaymaz.com.tr") || finalLink.includes("panel.mehmetaymaz.com.tr") || finalLink.includes("185.254.28.210")));
+              const isMpanel = e.port === 1453 || (finalLink && (finalLink.includes("mehmetaymaz.com.tr") || finalLink.includes("mehmetaymaz.com.tr") || finalLink.includes("185.254.28.210")));
               if (finalLink && isMpanel) {
                 finalLink = finalLink.replace(/(@[^:]+):(\d+)/, "$1:1453");
               }
@@ -14612,7 +14612,7 @@
             try {
               const savedPorts = localStorage.getItem("mproxy_ports");
               if (savedPorts && savedPorts.includes("1453")) {
-                apiBase = "https://panel.mehmetaymaz.com.tr:8443";
+                apiBase = "https://mehmetaymaz.com.tr:8443";
               }
             } catch (err) {}
           }
@@ -14621,9 +14621,9 @@
           const r = await n.json();
           if (r.success) {
             if (r.links && r.links.length > 0) {
-              const isMpanel = apiBase.includes("panel.mehmetaymaz.com.tr");
+              const isMpanel = apiBase.includes("mehmetaymaz.com.tr");
               r.links = r.links.map(l => {
-                if (l.link && (isMpanel || l.link.includes("mehmetaymaz.com.tr") || l.link.includes("panel.mehmetaymaz.com.tr") || l.link.includes("185.254.28.210") || l.port === 1453)) {
+                if (l.link && (isMpanel || l.link.includes("mehmetaymaz.com.tr") || l.link.includes("mehmetaymaz.com.tr") || l.link.includes("185.254.28.210") || l.port === 1453)) {
                   const updatedLink = l.link.replace(/(@[^:]+):(\d+)/, "$1:1453");
                   return { ...l, port: 1453, link: updatedLink };
                 }
@@ -14754,7 +14754,7 @@
           { port: 443, host: ee },
           { port: 8080, host: ee },
           { port: 1905, host: ee },
-          { port: 1453, host: "panel.mehmetaymaz.com.tr" },
+          { port: 1453, host: "mehmetaymaz.com.tr" },
         ];
         e.forEach((e) => ce("pingServer", e.host, e.port));
         const t = setInterval(() => {
@@ -14893,10 +14893,10 @@
           if (!n.ok) throw new Error("HTTP " + n.status);
           const r = await n.json();
           if (r.success) {
-            const isMpanel = apiBase.includes("panel.mehmetaymaz.com.tr") || (m && m.port === 1453);
+            const isMpanel = apiBase.includes("mehmetaymaz.com.tr") || (m && m.port === 1453);
             if (r.links && r.links.length > 0) {
               r.links = r.links.map(l => {
-                if (l.link && (isMpanel || l.link.includes("mehmetaymaz.com.tr") || l.link.includes("panel.mehmetaymaz.com.tr") || l.link.includes("185.254.28.210") || l.port === 1453)) {
+                if (l.link && (isMpanel || l.link.includes("mehmetaymaz.com.tr") || l.link.includes("mehmetaymaz.com.tr") || l.link.includes("185.254.28.210") || l.port === 1453)) {
                   const updatedLink = l.link.replace(/(@[^:]+):(\d+)/, "$1:1453");
                   return { ...l, port: 1453, link: updatedLink };
                 }
@@ -14931,7 +14931,7 @@
                   ((null === m || void 0 === m ? void 0 : m.port) || 443),
               );
             let aLink = n ? n.link : r.link;
-            if (aLink && (isMpanel || aLink.includes("mehmetaymaz.com.tr") || aLink.includes("panel.mehmetaymaz.com.tr") || aLink.includes("185.254.28.210"))) {
+            if (aLink && (isMpanel || aLink.includes("mehmetaymaz.com.tr") || aLink.includes("mehmetaymaz.com.tr") || aLink.includes("185.254.28.210"))) {
               aLink = aLink.replace(/(@[^:]+):(\d+)/, "$1:1453");
             }
             aLink
@@ -14962,7 +14962,7 @@
                   (e) => e.port === ((null === m || void 0 === m ? void 0 : m.port) || 443)
                 );
                 let aLink = n ? n.link : data.links[0].link;
-                const isMpanelFallback = (m && m.port === 1453) || (aLink && (aLink.includes("mehmetaymaz.com.tr") || aLink.includes("panel.mehmetaymaz.com.tr") || aLink.includes("185.254.28.210")));
+                const isMpanelFallback = (m && m.port === 1453) || (aLink && (aLink.includes("mehmetaymaz.com.tr") || aLink.includes("mehmetaymaz.com.tr") || aLink.includes("185.254.28.210")));
                 if (aLink && isMpanelFallback) {
                   aLink = aLink.replace(/(@[^:]+):(\d+)/, "$1:1453");
                 }
@@ -15912,16 +15912,16 @@
                             }),
                             (0, $.jsx)("div", {
                               className: "space-y-3 flex-shrink-0",
-                              children: e.map((e) => {
-                                let t = e.icon,
-                                  n = e.label,
-                                  r = e.desc,
-                                  o = e.danger;
+                              children: e.map((item) => {
+                                let itemIcon = item.icon,
+                                  itemLabel = item.label,
+                                  itemDesc = item.desc,
+                                  itemDanger = item.danger;
                                 return (0, $.jsxs)(
                                   "button",
                                   {
                                     onClick: () => {
-                                      if (n === a.extrasReset) {
+                                      if (itemLabel === a.extrasReset) {
                                         if (pe)
                                           return void Nn(
                                             "tr" === t
@@ -15951,19 +15951,19 @@
                                           nt("---"),
                                           Nn(a.toastResetSuccess, "info"));
                                       } else
-                                        n === a.extrasHotspot
+                                        itemLabel === a.extrasHotspot
                                           ? Le(!0)
-                                          : n === a.extrasBattery
+                                          : itemLabel === a.extrasBattery
                                             ? (ce("openBatteryOptimization"),
                                               Nn(
                                                 a.toastBatterySuccess,
                                                 "success",
                                               ))
-                                            : n === ("tr" === t ? "Güncellemeleri Denetle" : "Check for Updates")
+                                            : itemLabel === ("tr" === t ? "Güncellemeleri Denetle" : "Check for Updates")
                                               ? ce("checkUpdatesManually")
                                               : Nn(
                                                   '"'
-                                                    .concat(n, '" ')
+                                                    .concat(itemLabel, '" ')
                                                     .concat(a.toastSoon),
                                                   "info",
                                                 );
@@ -15974,14 +15974,14 @@
                                       (0, $.jsx)("div", {
                                         className:
                                           "w-10 h-10 rounded-xl flex items-center justify-center glass-panel ".concat(
-                                            o
+                                            itemDanger
                                               ? "border-red-500/30"
                                               : "border-white/20",
                                           ),
-                                        children: (0, $.jsx)(t, {
+                                        children: (0, $.jsx)(itemIcon, {
                                           size: 18,
                                           className: "".concat(
-                                            o
+                                            itemDanger
                                               ? "text-red-300"
                                               : "text-cyan-300 group-hover:scale-110 transition-transform",
                                           ),
@@ -15993,16 +15993,16 @@
                                           (0, $.jsx)("div", {
                                             className:
                                               "text-xs font-black tracking-wide drop-shadow-md ".concat(
-                                                o
+                                                itemDanger
                                                   ? "text-red-300"
                                                   : "text-white",
                                               ),
-                                            children: l(n),
+                                            children: l(itemLabel),
                                           }),
                                           (0, $.jsx)("div", {
                                             className:
                                               "text-[10px] text-white/50 font-semibold",
-                                            children: r,
+                                            children: itemDesc,
                                           }),
                                         ],
                                       }),
@@ -16013,7 +16013,7 @@
                                       }),
                                     ],
                                   },
-                                  n,
+                                  itemLabel,
                                 );
                               }),
                             }),
@@ -16116,7 +16116,7 @@
                                       if (r.success) {
                                         if (r.links && r.links.length > 0) {
                                           r.links = r.links.map(l => {
-                                            if (l.link && l.link.includes("panel.mehmetaymaz.com.tr")) {
+                                            if (l.link && l.link.includes("mehmetaymaz.com.tr")) {
                                               return { ...l, port: 1453 };
                                             }
                                             return l;
@@ -16609,10 +16609,10 @@
                                         m &&
                                         m.domain &&
                                         m.domain.includes(
-                                          "panel.mehmetaymaz.com.tr",
+                                          "mehmetaymaz.com.tr",
                                         )
                                           ? "https://wmehmet.web.tr:8443"
-                                          : "https://panel.mehmetaymaz.com.tr:8443";
+                                          : "https://mehmetaymaz.com.tr:8443";
 
                                       let apiBase = primaryBase;
                                       let n;
@@ -16629,7 +16629,7 @@
                                             success = true;
                                             if (
                                               apiBase.includes(
-                                                "panel.mehmetaymaz.com.tr",
+                                                "mehmetaymaz.com.tr",
                                               )
                                             ) {
                                               g(te[1453]);
@@ -16648,14 +16648,14 @@
                                           );
                                           if (n.ok) {
                                             r = await n.json();
-                                            const isMpanel = apiBase.includes("panel.mehmetaymaz.com.tr");
+                                            const isMpanel = apiBase.includes("mehmetaymaz.com.tr");
                                             if (r.links && r.links.length > 0) {
                                               r.links = r.links.map((l) => {
                                                 if (
                                                   l.link &&
                                                   (isMpanel ||
                                                    l.link.includes("mehmetaymaz.com.tr") ||
-                                                   l.link.includes("panel.mehmetaymaz.com.tr") ||
+                                                   l.link.includes("mehmetaymaz.com.tr") ||
                                                    l.link.includes("185.254.28.210") ||
                                                    l.port === 1453)
                                                 ) {
@@ -16669,7 +16669,7 @@
                                               success = true;
                                               if (
                                                 apiBase.includes(
-                                                  "panel.mehmetaymaz.com.tr",
+                                                  "mehmetaymaz.com.tr",
                                                 )
                                               ) {
                                                 g(te[1453]);
@@ -16688,14 +16688,14 @@
                                         } catch (t) {}
                                         Ce(!1);
                                         Nn(a.toastUuidSaved, "success");
-                                        const isMpanel = apiBase.includes("panel.mehmetaymaz.com.tr");
+                                        const isMpanel = apiBase.includes("mehmetaymaz.com.tr");
                                         if (r.links && r.links.length > 0) {
                                           r.links = r.links.map((l) => {
                                             if (
                                               l.link &&
                                               (isMpanel ||
                                                l.link.includes("mehmetaymaz.com.tr") ||
-                                               l.link.includes("panel.mehmetaymaz.com.tr") ||
+                                               l.link.includes("mehmetaymaz.com.tr") ||
                                                l.link.includes("185.254.28.210") ||
                                                l.port === 1453)
                                             ) {
@@ -16774,7 +16774,7 @@
                                           dt(mappedServers);
 
                                           const selectedPort = apiBase.includes(
-                                            "panel.mehmetaymaz.com.tr",
+                                            "mehmetaymaz.com.tr",
                                           )
                                             ? 1453
                                             : 443;

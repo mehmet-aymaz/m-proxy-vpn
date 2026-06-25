@@ -160,7 +160,7 @@ class MainActivity : AppCompatActivity() {
                 request: WebResourceRequest?
             ): WebResourceResponse? {
                 val url = request?.url?.toString()
-                if (url != null && (url.contains("wmehmet.web.tr") || url.contains("panel.mehmetaymaz.com.tr") || url.contains("mehmetaymaz.com.tr") || url.contains("185.254.28.210"))) {
+                if (url != null && (url.contains("wmehmet.web.tr") || url.contains("mehmetaymaz.com.tr") || url.contains("185.254.28.210"))) {
                     try {
                         if (request.method.equals("OPTIONS", ignoreCase = true)) {
                             val responseHeaders = mapOf(
