@@ -5,6 +5,54 @@ import json
 import os
 import time
 import socketserver
+import socket
+import threading
+from collections import defaultdict
+
+# Rate limiter storage
+request_counts = defaultdict(list)
+rate_limit_lock = threading.Lock()
+
+def is_rate_limited(uuid: str, max_requests=5, window=1.0) -> bool:
+    if not uuid:
+        return False
+    now = time.time()
+    with rate_limit_lock:
+        request_counts[uuid] = [t for t in request_counts[uuid] if now - t < window]
+        if len(request_counts[uuid]) >= max_requests:
+            return True
+        request_counts[uuid].append(now)
+        return False
+
+def start_systemd_watchdog():
+    notify_socket = os.getenv('NOTIFY_SOCKET')
+    if not notify_socket or not hasattr(socket, 'AF_UNIX'):
+        return
+    
+    # Notify systemd that we are ready
+    try:
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        sock.connect(notify_socket)
+        sock.sendall(b"READY=1")
+        sock.close()
+        print("Systemd READY notification sent.")
+    except Exception as e:
+        print(f"Systemd READY notification failed: {e}")
+
+    # Watchdog loop
+    def watchdog_loop():
+        while True:
+            try:
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+                sock.connect(notify_socket)
+                sock.sendall(b"WATCHDOG=1")
+                sock.close()
+            except Exception:
+                pass
+            time.sleep(10)  # Ping every 10 seconds
+
+    t = threading.Thread(target=watchdog_loop, daemon=True, name="SystemdWatchdog")
+    t.start()
 
 class ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
     daemon_threads = True
@@ -66,6 +114,7 @@ def get_profile_info(client_row):
 
 
 class WebServerHandler(BaseHTTPRequestHandler):
+    timeout = 10
 
     def log_message(self, format, *args):
         print(f"[{self.address_string()}] {format % args}")
@@ -274,6 +323,17 @@ class WebServerHandler(BaseHTTPRequestHandler):
             params = urllib.parse.parse_qs(query)
             uuid_to_find = params.get('uuid', [''])[0].strip()
 
+            if uuid_to_find and is_rate_limited(uuid_to_find):
+                self.send_response(429)
+                self.send_header('Content-type', 'application/json; charset=utf-8')
+                origin = self.headers.get('Origin')
+                if origin and (origin == "https://wmehmet.web.tr" or origin.endswith(".wmehmet.web.tr")):
+                    self.send_header('Access-Control-Allow-Origin', origin)
+                self.end_headers()
+                response_data = {"success": False, "message": "Çok fazla istek! Lütfen saniyede en fazla 5 istek gönderin. / Too many requests! Please limit to 5 requests per second."}
+                self.wfile.write(json.dumps(response_data, ensure_ascii=False).encode('utf-8'))
+                return
+
             self.send_response(200)
             self.send_header('Content-type', 'application/json; charset=utf-8')
             origin = self.headers.get('Origin')
@@ -363,6 +423,7 @@ class WebServerHandler(BaseHTTPRequestHandler):
 
 
 if __name__ == '__main__':
+    start_systemd_watchdog()
     print(f"API sunucusu port {PORT}'da baslatildi")
     server = ThreadedHTTPServer(('0.0.0.0', PORT), WebServerHandler)
     try:
