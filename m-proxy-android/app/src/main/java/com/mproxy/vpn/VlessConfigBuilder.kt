@@ -1,11 +1,12 @@
 package com.mproxy.vpn
 
+import android.content.Context
 import android.net.Uri
 import org.json.JSONObject
 
 object VlessConfigBuilder {
 
-    fun buildConfig(vlessLink: String): String {
+    fun buildConfig(context: Context, vlessLink: String): String {
         val uri = Uri.parse(vlessLink)
 
         val uuid = uri.userInfo ?: ""
@@ -19,6 +20,19 @@ object VlessConfigBuilder {
         val path = uri.getQueryParameter("path") ?: "/"
         val fp = uri.getQueryParameter("fp") ?: "chrome"
 
+        // Resolve dynamic DNS configuration
+        val dnsMode = AppSettings.getDnsMode(context)
+        val remoteDnsIp = when (dnsMode) {
+            "GOOGLE" -> "8.8.8.8"
+            "CLOUDFLARE" -> "1.1.1.1"
+            "ADGUARD" -> "94.140.14.14"
+            "CUSTOM" -> {
+                val custom = AppSettings.getCustomDnsAddress(context)
+                if (custom.isNotEmpty()) custom else "8.8.8.8"
+            }
+            else -> "8.8.8.8"
+        }
+
         val config = JSONObject().apply {
             put("log", JSONObject().apply {
                 put("level", "info")
@@ -29,7 +43,7 @@ object VlessConfigBuilder {
                 put("servers", org.json.JSONArray().apply {
                     put(JSONObject().apply {
                         put("tag", "dns-remote")
-                        put("address", "8.8.8.8")
+                        put("address", remoteDnsIp)
                         put("detour", "proxy")
                     })
                     put(JSONObject().apply {
@@ -70,6 +84,21 @@ object VlessConfigBuilder {
                     put("stack", "gvisor")
                     put("sniff", true)
                     put("sniff_override_destination", true)
+
+                    // Inject Per-App proxy routing rules
+                    if (AppSettings.isPerAppEnabled(context)) {
+                        val packages = AppSettings.getSelectedPackages(context)
+                        if (packages.isNotEmpty()) {
+                            val jsonArray = org.json.JSONArray()
+                            packages.forEach { jsonArray.put(it) }
+                            val mode = AppSettings.getPerAppMode(context)
+                            if (mode == "PROXY") {
+                                put("include_package", jsonArray)
+                            } else {
+                                put("exclude_package", jsonArray)
+                            }
+                        }
+                    }
                 })
                 put(JSONObject().apply {
                     put("type", "mixed")

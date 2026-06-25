@@ -328,7 +328,7 @@ class MProxyVpnService : VpnService() {
 
             // Step 2: Build sing-box config
             Log.d(TAG, "Step 2: Building config...")
-            val configJson = VlessConfigBuilder.buildConfig(vlessLink)
+            val configJson = VlessConfigBuilder.buildConfig(applicationContext, vlessLink)
             Log.d(TAG, "Step 2: Config built (${configJson.length} bytes)")
             configJson.chunked(1000).forEach { Log.d(TAG, "Config chunk: $it") }
 

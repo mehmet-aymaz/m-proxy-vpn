@@ -104,6 +104,19 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webview)
+
+        val btnSettings = findViewById<android.widget.ImageButton>(R.id.btn_settings)
+        btnSettings.setOnClickListener {
+            showSettingsDialog()
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(btnSettings) { view, insets ->
+            val statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            val params = view.layoutParams as android.widget.FrameLayout.LayoutParams
+            val extraMargin = (16 * view.resources.displayMetrics.density).toInt()
+            params.topMargin = statusBarInsets.top + extraMargin
+            view.layoutParams = params
+            insets
+        }
         
         webView.settings.apply {
             javaScriptEnabled = true
@@ -632,5 +645,511 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun showSettingsDialog() {
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        
+        val density = resources.displayMetrics.density
+        fun Int.dp(): Int = (this * density).toInt()
+
+        val rootLayout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setBackgroundColor(android.graphics.Color.parseColor("#0b132b"))
+            setPadding(24.dp(), 24.dp(), 24.dp(), 24.dp())
+            layoutParams = android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        // Title
+        val txtTitle = android.widget.TextView(this).apply {
+            text = "M-Proxy Gelişmiş Ayarlar"
+            textSize = 20f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(android.graphics.Color.parseColor("#C9A84C"))
+            gravity = android.view.Gravity.CENTER
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 16.dp()
+            }
+        }
+        rootLayout.addView(txtTitle)
+
+        // DNS Section Label
+        val lblDns = android.widget.TextView(this).apply {
+            text = "Gelişmiş DNS Ayarları"
+            textSize = 14f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(android.graphics.Color.parseColor("#80FFFFFF"))
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 8.dp()
+            }
+        }
+        rootLayout.addView(lblDns)
+
+        // DNS Spinner
+        val dnsOptions = arrayOf("Varsayılan (Google DNS)", "Cloudflare DNS", "AdGuard Adblock DNS", "Özel DNS")
+        val dnsModes = arrayOf("GOOGLE", "CLOUDFLARE", "ADGUARD", "CUSTOM")
+        
+        val spinnerDns = android.widget.Spinner(this).apply {
+            adapter = android.widget.ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                dnsOptions
+            )
+            val currentDnsMode = AppSettings.getDnsMode(this@MainActivity)
+            val idx = dnsModes.indexOf(currentDnsMode).takeIf { it >= 0 } ?: 0
+            setSelection(idx)
+            
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 12.dp()
+            }
+        }
+        spinnerDns.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
+        rootLayout.addView(spinnerDns)
+
+        // Custom DNS Input
+        val edtCustomDns = android.widget.EditText(this).apply {
+            hint = "Özel DNS IP (Örn: 1.1.1.1)"
+            setHintTextColor(android.graphics.Color.parseColor("#40FFFFFF"))
+            setTextColor(android.graphics.Color.WHITE)
+            setText(AppSettings.getCustomDnsAddress(this@MainActivity))
+            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
+            visibility = if (AppSettings.getDnsMode(this@MainActivity) == "CUSTOM") android.view.View.VISIBLE else android.view.View.GONE
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 16.dp()
+            }
+        }
+        rootLayout.addView(edtCustomDns)
+
+        spinnerDns.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                if (dnsModes[position] == "CUSTOM") {
+                    edtCustomDns.visibility = android.view.View.VISIBLE
+                } else {
+                    edtCustomDns.visibility = android.view.View.GONE
+                }
+                (view as? android.widget.TextView)?.setTextColor(android.graphics.Color.WHITE)
+            }
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        }
+
+        // Divider
+        val divider = android.view.View(this).apply {
+            setBackgroundColor(android.graphics.Color.parseColor("#20FFFFFF"))
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                1.dp()
+            ).apply {
+                topMargin = 8.dp()
+                bottomMargin = 16.dp()
+            }
+        }
+        rootLayout.addView(divider)
+
+        // Per-App Section Label
+        val lblPerApp = android.widget.TextView(this).apply {
+            text = "Uygulama Bazlı Tünelleme"
+            textSize = 14f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(android.graphics.Color.parseColor("#80FFFFFF"))
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 8.dp()
+            }
+        }
+        rootLayout.addView(lblPerApp)
+
+        // Switch layout
+        val perAppLayout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 12.dp()
+            }
+        }
+        
+        val txtSwitch = android.widget.TextView(this).apply {
+            text = "Uygulama Filtrelemeyi Etkinleştir"
+            setTextColor(android.graphics.Color.WHITE)
+            textSize = 15f
+            layoutParams = android.widget.LinearLayout.LayoutParams(0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        perAppLayout.addView(txtSwitch)
+
+        val switchPerApp = android.widget.Switch(this).apply {
+            isChecked = AppSettings.isPerAppEnabled(this@MainActivity)
+        }
+        perAppLayout.addView(switchPerApp)
+        rootLayout.addView(perAppLayout)
+
+        // Per-App Details
+        val detailsLayout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            visibility = if (switchPerApp.isChecked) android.view.View.VISIBLE else android.view.View.GONE
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        // Mode Spinner
+        val modeOptions = arrayOf("Seçilenleri Tünelle (Proxy)", "Seçilenler Hariç (Bypass/Direct)")
+        val modeValues = arrayOf("PROXY", "BYPASS")
+        val spinnerMode = android.widget.Spinner(this).apply {
+            adapter = android.widget.ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                modeOptions
+            )
+            val currentMode = AppSettings.getPerAppMode(this@MainActivity)
+            val idx = modeValues.indexOf(currentMode).takeIf { it >= 0 } ?: 0
+            setSelection(idx)
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 12.dp()
+            }
+        }
+        spinnerMode.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
+        detailsLayout.addView(spinnerMode)
+
+        val selectedPackages = AppSettings.getSelectedPackages(this).toMutableSet()
+
+        val btnSelectApps = android.widget.Button(this).apply {
+            text = "Uygulamaları Seç (${selectedPackages.size} uygulama)"
+            setTextColor(android.graphics.Color.WHITE)
+            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#1e293b"))
+            setOnClickListener {
+                showAppSelectionDialog(selectedPackages) { newSelection ->
+                    selectedPackages.clear()
+                    selectedPackages.addAll(newSelection)
+                    text = "Uygulamaları Seç (${selectedPackages.size} uygulama)"
+                }
+            }
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 16.dp()
+            }
+        }
+        detailsLayout.addView(btnSelectApps)
+        rootLayout.addView(detailsLayout)
+
+        switchPerApp.setOnCheckedChangeListener { _, isChecked ->
+            detailsLayout.visibility = if (isChecked) android.view.View.VISIBLE else android.view.View.GONE
+        }
+
+        // Save Button
+        val btnSave = android.widget.Button(this).apply {
+            text = "AYARLARI KAYDET"
+            setTextColor(android.graphics.Color.BLACK)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
+            setOnClickListener {
+                val selectedDnsIdx = spinnerDns.selectedItemPosition
+                val dnsMode = dnsModes[selectedDnsIdx]
+                AppSettings.setDnsMode(this@MainActivity, dnsMode)
+                AppSettings.setCustomDnsAddress(this@MainActivity, edtCustomDns.text.toString().trim())
+
+                AppSettings.setPerAppEnabled(this@MainActivity, switchPerApp.isChecked)
+                val selectedModeIdx = spinnerMode.selectedItemPosition
+                val perAppMode = modeValues[selectedModeIdx]
+                AppSettings.setPerAppMode(this@MainActivity, perAppMode)
+                AppSettings.setSelectedPackages(this@MainActivity, selectedPackages)
+
+                dialog.dismiss()
+                Toast.makeText(this@MainActivity, "Ayarlar kaydedildi. Geçerli olması için bağlantıyı yenileyin.", Toast.LENGTH_LONG).show()
+            }
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = 8.dp()
+            }
+        }
+        rootLayout.addView(btnSave)
+
+        dialog.setContentView(rootLayout)
+        dialog.show()
+    }
+
+    private fun showAppSelectionDialog(
+        selectedSet: Set<String>,
+        onSaved: (Set<String>) -> Unit
+    ) {
+        val dialog = AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_NoActionBar_Fullscreen).create()
+        val density = resources.displayMetrics.density
+        fun Int.dp(): Int = (this * density).toInt()
+
+        val rootLayout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setBackgroundColor(android.graphics.Color.parseColor("#0b132b"))
+            setPadding(16.dp(), 16.dp(), 16.dp(), 16.dp())
+            layoutParams = android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+
+        val headerLayout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 12.dp()
+            }
+        }
+
+        val txtTitle = android.widget.TextView(this).apply {
+            text = "Tünellenecek Uygulamalar"
+            textSize = 18f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(android.graphics.Color.parseColor("#C9A84C"))
+            layoutParams = android.widget.LinearLayout.LayoutParams(0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        headerLayout.addView(txtTitle)
+        rootLayout.addView(headerLayout)
+
+        val edtSearch = android.widget.EditText(this).apply {
+            hint = "Uygulama veya paket adı ara..."
+            setHintTextColor(android.graphics.Color.parseColor("#40FFFFFF"))
+            setTextColor(android.graphics.Color.WHITE)
+            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 8.dp()
+            }
+        }
+        rootLayout.addView(edtSearch)
+
+        val progressBar = android.widget.ProgressBar(this).apply {
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = android.view.Gravity.CENTER
+                topMargin = 32.dp()
+            }
+        }
+        rootLayout.addView(progressBar)
+
+        val listView = android.widget.ListView(this).apply {
+            divider = android.graphics.drawable.ColorDrawable(android.graphics.Color.parseColor("#15ffffff"))
+            dividerHeight = 1
+            cacheColorHint = 0
+            visibility = android.view.View.GONE
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            ).apply {
+                bottomMargin = 12.dp()
+            }
+        }
+        rootLayout.addView(listView)
+
+        val buttonsLayout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val btnCancel = android.widget.Button(this).apply {
+            text = "İPTAL"
+            setTextColor(android.graphics.Color.WHITE)
+            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#334155"))
+            setOnClickListener { dialog.dismiss() }
+            layoutParams = android.widget.LinearLayout.LayoutParams(0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                rightMargin = 8.dp()
+            }
+        }
+        buttonsLayout.addView(btnCancel)
+
+        val currentSelection = selectedSet.toMutableSet()
+
+        val btnSave = android.widget.Button(this).apply {
+            text = "KAYDET"
+            setTextColor(android.graphics.Color.BLACK)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#C9A84C"))
+            setOnClickListener {
+                onSaved(currentSelection)
+                dialog.dismiss()
+            }
+            layoutParams = android.widget.LinearLayout.LayoutParams(0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        buttonsLayout.addView(btnSave)
+        rootLayout.addView(buttonsLayout)
+
+        dialog.setView(rootLayout)
+        dialog.show()
+
+        Thread({
+            val pm = packageManager
+            val packages = pm.getInstalledPackages(android.content.pm.PackageManager.GET_META_DATA)
+            val appsList = mutableListOf<AppInfo>()
+
+            for (pkg in packages) {
+                val launchIntent = pm.getLaunchIntentForPackage(pkg.packageName)
+                if (launchIntent != null && pkg.packageName != packageName) {
+                    val label = pkg.applicationInfo.loadLabel(pm).toString()
+                    val icon = pkg.applicationInfo.loadIcon(pm)
+                    val isSelected = currentSelection.contains(pkg.packageName)
+                    appsList.add(AppInfo(label, pkg.packageName, icon, isSelected))
+                }
+            }
+            appsList.sortBy { it.label.lowercase() }
+
+            runOnUiThread {
+                progressBar.visibility = android.view.View.GONE
+                listView.visibility = android.view.View.VISIBLE
+
+                val adapter = AppAdapter(this, appsList) { app, checked ->
+                    if (checked) {
+                        currentSelection.add(app.packageName)
+                    } else {
+                        currentSelection.remove(app.packageName)
+                    }
+                }
+                listView.adapter = adapter
+
+                edtSearch.addTextChangedListener(object : android.text.TextWatcher {
+                    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                        adapter.filter(s?.toString() ?: "")
+                    }
+                    override fun afterTextChanged(s: android.text.Editable?) {}
+                })
+            }
+        }).start()
+    }
+}
+
+data class AppInfo(
+    val label: String,
+    val packageName: String,
+    val icon: android.graphics.drawable.Drawable,
+    var isSelected: Boolean = false
+)
+
+class AppAdapter(
+    context: Context,
+    private val allApps: List<AppInfo>,
+    private val onCheckChanged: (AppInfo, Boolean) -> Unit
+) : android.widget.ArrayAdapter<AppInfo>(context, 0, allApps) {
+    private var filteredApps = allApps
+
+    fun filter(query: String) {
+        filteredApps = if (query.isEmpty()) {
+            allApps
+        } else {
+            allApps.filter { it.label.contains(query, ignoreCase = true) || it.packageName.contains(query, ignoreCase = true) }
+        }
+        notifyDataSetChanged()
+    }
+
+    override fun getCount(): Int = filteredApps.size
+    override fun getItem(position: Int): AppInfo? = filteredApps[position]
+
+    override fun getView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
+        val density = context.resources.displayMetrics.density
+        fun Int.dpToPx(): Int = (this * density).toInt()
+
+        val view = convertView ?: android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            layoutParams = android.widget.AbsListView.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            setPadding(16.dpToPx(), 12.dpToPx(), 16.dpToPx(), 12.dpToPx())
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            
+            addView(android.widget.ImageView(context).apply {
+                id = android.view.View.generateViewId()
+                layoutParams = android.widget.LinearLayout.LayoutParams(40.dpToPx(), 40.dpToPx()).apply {
+                    rightMargin = 16.dpToPx()
+                }
+            })
+            
+            addView(android.widget.LinearLayout(context).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    0,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                    1f
+                )
+                
+                addView(android.widget.TextView(context).apply {
+                    id = android.view.View.generateViewId()
+                    textSize = 16f
+                    setTextColor(android.graphics.Color.WHITE)
+                    maxLines = 1
+                    ellipsize = android.text.TextUtils.TruncateAt.END
+                })
+                
+                addView(android.widget.TextView(context).apply {
+                    id = android.view.View.generateViewId()
+                    textSize = 12f
+                    setTextColor(android.graphics.Color.GRAY)
+                    maxLines = 1
+                    ellipsize = android.text.TextUtils.TruncateAt.END
+                })
+            })
+            
+            addView(android.widget.CheckBox(context).apply {
+                id = android.view.View.generateViewId()
+                isFocusable = false
+                isClickable = false
+            })
+        }
+        
+        val app = getItem(position) ?: return view
+        
+        val layout = view as android.widget.LinearLayout
+        val imgIcon = layout.getChildAt(0) as android.widget.ImageView
+        val layoutText = layout.getChildAt(1) as android.widget.LinearLayout
+        val txtLabel = layoutText.getChildAt(0) as android.widget.TextView
+        val txtPackage = layoutText.getChildAt(1) as android.widget.TextView
+        val chkSelect = layout.getChildAt(2) as android.widget.CheckBox
+        
+        imgIcon.setImageDrawable(app.icon)
+        txtLabel.text = app.label
+        txtPackage.text = app.packageName
+        chkSelect.isChecked = app.isSelected
+        
+        view.setOnClickListener {
+            app.isSelected = !app.isSelected
+            chkSelect.isChecked = app.isSelected
+            onCheckChanged(app, app.isSelected)
+        }
+        
+        return view
     }
 }
