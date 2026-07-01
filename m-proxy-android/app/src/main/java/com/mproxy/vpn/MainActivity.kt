@@ -188,8 +188,8 @@ class MainActivity : AppCompatActivity() {
                             if (url.contains("wmehmet.web.tr")) {
                                 urlConnection.sslSocketFactory = PinningTrustManager.getSSLSocketFactory()
                             } else {
-                                urlConnection.sslSocketFactory = LenientTrustManager.getSSLSocketFactory()
-                                urlConnection.hostnameVerifier = HostnameVerifiers.trustAll
+                                urlConnection.sslSocketFactory = SecureTrustManager.getSSLSocketFactory()
+                                urlConnection.hostnameVerifier = HostnameVerifiers.default
                             }
                         }
                         urlConnection.requestMethod = request.method
@@ -400,15 +400,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Checks for app updates via GitHub API and redirects to Play Store if update is available.
+     * NOTE: Direct APK download/install has been removed — updates are handled by Google Play Store.
+     */
     fun checkAppUpdate(silent: Boolean) {
         val executor = Executors.newSingleThreadExecutor()
         val handler = Handler(Looper.getMainLooper())
-        
+
         val currentVersion = try {
             val packageInfo = packageManager.getPackageInfo(packageName, 0)
-            packageInfo.versionName ?: "1.1.4"
+            packageInfo.versionName ?: "0.0.0"
         } catch (e: Exception) {
-            "1.1.4"
+            "0.0.0"
         }
 
         executor.execute {
@@ -424,51 +428,29 @@ class MainActivity : AppCompatActivity() {
 
                 if (connection.responseCode == 200) {
                     val responseBody = connection.inputStream.bufferedReader(Charsets.UTF_8).readText()
-                    val json = JSONObject(responseBody)
+                    val json = org.json.JSONObject(responseBody)
                     val latestVersion = json.optString("tag_name", "").replace("v", "").trim()
                     val changelog = json.optString("body", "")
-                    
-                    val assets = json.optJSONArray("assets")
-                    var apkUrl: String? = null
-                    if (assets != null) {
-                        for (i in 0 until assets.length()) {
-                            val asset = assets.getJSONObject(i)
-                            val name = asset.optString("name", "")
-                            if (name.endsWith(".apk")) {
-                                apkUrl = asset.optString("browser_download_url", "")
-                                break
-                            }
-                        }
-                    }
 
-                    if (latestVersion.isNotEmpty() && apkUrl != null) {
-                        val hasUpdate = isVersionNewer(currentVersion, latestVersion)
-                        if (hasUpdate) {
-                            handler.post {
-                                showUpdateDialog(latestVersion, changelog, apkUrl)
-                            }
-                        } else {
-                            if (!silent) {
-                                handler.post {
-                                    showNotification("Uygulama güncel (v$currentVersion)", "success")
-                                }
-                            }
+                    if (latestVersion.isNotEmpty() && isVersionNewer(currentVersion, latestVersion)) {
+                        handler.post {
+                            showUpdateDialog(latestVersion, changelog)
                         }
                     } else if (!silent) {
                         handler.post {
-                            showNotification("Güncelleme dosyası bulunamadı.", "warn")
+                            showNotification("Uygulama güncel (v$currentVersion)", "success")
                         }
                     }
                 } else if (!silent) {
                     handler.post {
-                        showNotification("API Hatası: ${connection.responseCode}", "error")
+                        showNotification("Güncelleme kontrolü başarısız: ${connection.responseCode}", "warn")
                     }
                 }
             } catch (e: Exception) {
                 Log.e("MainActivity", "Update check failed: ${e.message}", e)
                 if (!silent) {
                     handler.post {
-                        showNotification("Bağlantı Hatası: ${e.message}", "error")
+                        showNotification("Güncelleme kontrolü yapılamadı", "warn")
                     }
                 }
             } finally {
@@ -480,10 +462,8 @@ class MainActivity : AppCompatActivity() {
     private fun isVersionNewer(current: String, latest: String): Boolean {
         val cleanCurrent = current.replace(Regex("[^0-9.]"), "")
         val cleanLatest = latest.replace(Regex("[^0-9.]"), "")
-        
         val currentParts = cleanCurrent.split(".").map { it.toIntOrNull() ?: 0 }
         val latestParts = cleanLatest.split(".").map { it.toIntOrNull() ?: 0 }
-        
         val maxLength = maxOf(currentParts.size, latestParts.size)
         for (i in 0 until maxLength) {
             val curr = currentParts.getOrNull(i) ?: 0
@@ -494,9 +474,13 @@ class MainActivity : AppCompatActivity() {
         return false
     }
 
-    private fun showUpdateDialog(latestVersion: String, changelog: String, apkUrl: String) {
+    /**
+     * Shows update dialog that redirects user to Play Store.
+     * Direct APK install removed — Play Store policy requires updates through the store.
+     */
+    private fun showUpdateDialog(latestVersion: String, changelog: String) {
         if (isFinishing || isDestroyed) return
-        
+
         val dialog = AlertDialog.Builder(this).create()
         val density = resources.displayMetrics.density
         fun Int.dp(): Int = (this * density).toInt()
@@ -506,67 +490,72 @@ class MainActivity : AppCompatActivity() {
             background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 setColor(Color.parseColor("#14FFFFFF"))
-                cornerRadius = (32 * resources.displayMetrics.density)
-                setStroke((1 * resources.displayMetrics.density).toInt(), Color.parseColor("#1AFFFFFF"))
+                cornerRadius = (32 * density)
+                setStroke((1 * density).toInt(), Color.parseColor("#1AFFFFFF"))
             }
             setPadding(24.dp(), 24.dp(), 24.dp(), 24.dp())
-            layoutParams = android.view.ViewGroup.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+            layoutParams = android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            )
         }
 
-        // Title
         val txtTitle = TextView(this).apply {
             text = "Yeni Sürüm Mevcut"
             textSize = 18f
             setTypeface(null, android.graphics.Typeface.BOLD)
             setTextColor(Color.parseColor("#C9A84C"))
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                bottomMargin = 12.dp()
-            }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = 12.dp() }
         }
         rootLayout.addView(txtTitle)
 
-        // Message
         val txtMsg = TextView(this).apply {
-            text = "M-Proxy VPN v$latestVersion sürümü indirilebilir. Şimdi güncellemek ister misiniz?"
+            text = "M-Proxy VPN v$latestVersion mevcut. Güncelleme için Play Store'a yönlendirileceksiniz."
             textSize = 14f
             setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                bottomMargin = 16.dp()
-            }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = 16.dp() }
         }
         rootLayout.addView(txtMsg)
 
-        // Changelog header
-        val lblChangelog = TextView(this).apply {
-            text = "Değişiklikler:"
-            textSize = 12f
-            setTypeface(null, android.graphics.Typeface.BOLD)
-            setTextColor(Color.parseColor("#80FFFFFF"))
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                bottomMargin = 4.dp()
+        if (changelog.isNotEmpty()) {
+            val lblChangelog = TextView(this).apply {
+                text = "Değişiklikler:"
+                textSize = 12f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(Color.parseColor("#80FFFFFF"))
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { bottomMargin = 4.dp() }
             }
-        }
-        rootLayout.addView(lblChangelog)
+            rootLayout.addView(lblChangelog)
 
-        // Scrollable Changelog
-        val scrollView = android.widget.ScrollView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 100.dp()).apply {
-                bottomMargin = 20.dp()
+            val scrollView = android.widget.ScrollView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 100.dp()
+                ).apply { bottomMargin = 20.dp() }
             }
+            val txtChangelog = TextView(this).apply {
+                text = changelog
+                textSize = 12f
+                setTextColor(Color.parseColor("#CCCCCC"))
+                setLineSpacing(2f, 1.1f)
+            }
+            scrollView.addView(txtChangelog)
+            rootLayout.addView(scrollView)
         }
-        val txtChangelog = TextView(this).apply {
-            text = changelog
-            textSize = 12f
-            setTextColor(Color.parseColor("#CCCCCC"))
-            setLineSpacing(2f, 1.1f)
-        }
-        scrollView.addView(txtChangelog)
-        rootLayout.addView(scrollView)
 
-        // Buttons Layout
         val buttonsLayout = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            )
         }
 
         val btnCancel = android.widget.Button(this).apply {
@@ -575,30 +564,29 @@ class MainActivity : AppCompatActivity() {
             background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 setColor(Color.parseColor("#1AFFFFFF"))
-                cornerRadius = (16 * resources.displayMetrics.density)
-                setStroke((1 * resources.displayMetrics.density).toInt(), Color.parseColor("#22FFFFFF"))
+                cornerRadius = (16 * density)
+                setStroke((1 * density).toInt(), Color.parseColor("#22FFFFFF"))
             }
             setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
             setOnClickListener { dialog.dismiss() }
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                rightMargin = 8.dp()
-            }
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                .apply { rightMargin = 8.dp() }
         }
         buttonsLayout.addView(btnCancel)
 
         val btnUpdate = android.widget.Button(this).apply {
-            text = "GÜNCELLE"
+            text = "PLAY STORE'DA GÜNCELLE"
             setTextColor(Color.BLACK)
             setTypeface(null, android.graphics.Typeface.BOLD)
             background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 setColor(Color.parseColor("#C9A84C"))
-                cornerRadius = (16 * resources.displayMetrics.density)
+                cornerRadius = (16 * density)
             }
             setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
             setOnClickListener {
                 dialog.dismiss()
-                downloadAndInstallApk(apkUrl)
+                openPlayStorePage()
             }
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
@@ -615,173 +603,18 @@ class MainActivity : AppCompatActivity() {
             }
             val wlp = android.view.WindowManager.LayoutParams()
             wlp.copyFrom(attributes)
-            wlp.width = (340 * resources.displayMetrics.density).toInt()
+            wlp.width = (340 * density).toInt()
             attributes = wlp
         }
     }
 
-    private fun downloadAndInstallApk(apkUrl: String) {
-        val density = resources.displayMetrics.density
-        fun Int.dp(): Int = (this * density).toInt()
-
-        val rootLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                setColor(Color.parseColor("#14FFFFFF"))
-                cornerRadius = (32 * resources.displayMetrics.density)
-                setStroke((1 * resources.displayMetrics.density).toInt(), Color.parseColor("#1AFFFFFF"))
-            }
-            setPadding(24.dp(), 24.dp(), 24.dp(), 24.dp())
-            layoutParams = android.view.ViewGroup.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+    private fun openPlayStorePage() {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName")))
+        } catch (e: Exception) {
+            startActivity(Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://play.google.com/store/apps/details?id=$packageName")))
         }
-
-        // Title
-        val txtTitle = TextView(this).apply {
-            text = "Güncelleme İndiriliyor"
-            textSize = 18f
-            setTypeface(null, android.graphics.Typeface.BOLD)
-            setTextColor(Color.parseColor("#C9A84C"))
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                bottomMargin = 12.dp()
-            }
-        }
-        rootLayout.addView(txtTitle)
-
-        // Progress Text
-        val textView = TextView(this).apply {
-            text = "Lütfen bekleyin..."
-            textSize = 14f
-            setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                bottomMargin = 8.dp()
-            }
-        }
-        rootLayout.addView(textView)
-
-        // ProgressBar
-        val progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
-            isIndeterminate = false
-            max = 100
-            progressTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#C9A84C"))
-            progressBackgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#30FFFFFF"))
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                bottomMargin = 16.dp()
-            }
-        }
-        rootLayout.addView(progressBar)
-
-        val progressDialog = AlertDialog.Builder(this)
-            .setView(rootLayout)
-            .setCancelable(false)
-            .create()
-        progressDialog.show()
-        progressDialog.window?.apply {
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                attributes.blurBehindRadius = 45
-            }
-            val wlp = android.view.WindowManager.LayoutParams()
-            wlp.copyFrom(attributes)
-            wlp.width = (340 * resources.displayMetrics.density).toInt()
-            attributes = wlp
-        }
-
-        val executor = Executors.newSingleThreadExecutor()
-        val handler = Handler(Looper.getMainLooper())
-
-        executor.execute {
-            var connection: HttpURLConnection? = null
-            var inputStream: java.io.InputStream? = null
-            var outputStream: FileOutputStream? = null
-            try {
-                val url = URL(apkUrl)
-                connection = url.openConnection() as HttpURLConnection
-                connection.connectTimeout = 15000
-                connection.readTimeout = 15000
-                connection.connect()
-
-                if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                    throw Exception("Sunucu hata döndü: ${connection.responseCode}")
-                }
-
-                val fileLength = connection.contentLength
-                inputStream = connection.inputStream
-                val tempFile = File(cacheDir, "update.apk")
-                if (tempFile.exists()) {
-                    tempFile.delete()
-                }
-
-                outputStream = FileOutputStream(tempFile)
-                val data = ByteArray(4096)
-                var total: Long = 0
-                var count: Int
-                while (inputStream.read(data).also { count = it } != -1) {
-                    total += count
-                    if (fileLength > 0) {
-                        val progress = (total * 100 / fileLength).toInt()
-                        val kbDownloaded = total / 1024
-                        val kbTotal = fileLength / 1024
-                        handler.post {
-                            progressBar.progress = progress
-                            textView.text = "İndiriliyor: $kbDownloaded KB / $kbTotal KB ($progress%)"
-                        }
-                    } else {
-                        val kbDownloaded = total / 1024
-                        handler.post {
-                            progressBar.isIndeterminate = true
-                            textView.text = "İndiriliyor: $kbDownloaded KB"
-                        }
-                    }
-                    outputStream.write(data, 0, count)
-                }
-
-                handler.post {
-                    progressDialog.dismiss()
-                    installApk(tempFile)
-                }
-            } catch (e: Exception) {
-                Log.e("MainActivity", "Apk download failed: ${e.message}", e)
-                handler.post {
-                    progressDialog.dismiss()
-                    showNotification("İndirme hatası: ${e.message}", "error")
-                }
-            } finally {
-                try { outputStream?.close() } catch (_: Exception) {}
-                try { inputStream?.close() } catch (_: Exception) {}
-                try { connection?.disconnect() } catch (_: Exception) {}
-            }
-        }
-    }
-
-    private fun installApk(file: File) {
-        if (!file.exists()) return
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (!packageManager.canRequestPackageInstalls()) {
-                val settingsIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                    data = Uri.parse("package:$packageName")
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                }
-                startActivity(settingsIntent)
-                showNotification("Lütfen bilinmeyen uygulamaları yükleme iznini verin ve tekrar deneyin.", "warn")
-                return
-            }
-        }
-
-        val intent = Intent(Intent.ACTION_VIEW)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            val authority = "$packageName.fileprovider"
-            val apkUri = FileProvider.getUriForFile(this, authority, file)
-            intent.setDataAndType(apkUri, "application/vnd.android.package-archive")
-        } else {
-            intent.setDataAndType(Uri.fromFile(file), "application/vnd.android.package-archive")
-        }
-
-        startActivity(intent)
     }
 
     fun showNotification(message: String, type: String = "info") {

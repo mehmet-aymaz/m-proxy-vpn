@@ -3,6 +3,14 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// Read signing properties from local.properties (not committed to git)
+import java.util.Properties
+val localProps = Properties()
+val localPropsFile = rootProject.file("local.properties")
+if (localPropsFile.exists()) {
+    localPropsFile.inputStream().use { localProps.load(it) }
+}
+
 android {
     namespace = "com.mproxy.vpn"
     compileSdk = 34
@@ -11,8 +19,23 @@ android {
         applicationId = "com.mproxy.vpn"
         minSdk = 24
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.2.2"
+        versionCode = 6
+        versionName = "1.3.0"
+    }
+
+    signingConfigs {
+        create("release") {
+            val keystorePath = localProps.getProperty("KEYSTORE_PATH", "")
+            val keystorePass = localProps.getProperty("KEYSTORE_PASSWORD", "")
+            val keyAliasVal = localProps.getProperty("KEY_ALIAS", "")
+            val keyPass = localProps.getProperty("KEY_PASSWORD", "")
+            if (keystorePath.isNotEmpty()) {
+                storeFile = file(keystorePath)
+                storePassword = keystorePass
+                keyAlias = keyAliasVal
+                keyPassword = keyPass
+            }
+        }
     }
 
     buildTypes {
@@ -23,6 +46,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles.addAll(
                 listOf(
                     getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -32,14 +56,8 @@ android {
         }
     }
 
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            include("arm64-v8a", "armeabi-v7a")
-            isUniversalApk = false
-        }
-    }
+    // APK splits removed: AAB (Android App Bundle) handles ABI splits automatically
+    // This is required for Play Store submission
 
     packaging {
         resources {

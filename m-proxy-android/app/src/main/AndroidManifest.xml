@@ -16,8 +16,8 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" android:usesPermissionFlags="neverForLocation" tools:targetApi="s" />
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
+    <!-- REQUEST_INSTALL_PACKAGES removed: self-update feature removed for Play Store compliance -->
+    <!-- QUERY_ALL_PACKAGES removed: not required for VPN functionality -->
 
     <application
         android:allowBackup="true"
@@ -25,9 +25,8 @@
         android:label="M-Proxy VPN"
         android:supportsRtl="true"
         android:theme="@style/Theme.MProxyVPN"
-        android:usesCleartextTraffic="true"
         android:networkSecurityConfig="@xml/network_security_config"
-        tools:targetApi="34">
+        tools:targetApi="35">
 
         <activity
             android:name=".MainActivity"
@@ -51,6 +50,10 @@
             <intent-filter>
                 <action android:name="android.net.VpnService" />
             </intent-filter>
+            <!-- Required by Android 14 (API 34+) for specialUse foreground services -->
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Bu uygulama VLESS protokolü üzerinden güvenli bir VPN tüneli oluşturur ve Wi-Fi Direct üzerinden diğer cihazlarla paylaşır." />
         </service>
 
         <!-- M-Proxy VPN Ana Ekran Widget'ı -->
