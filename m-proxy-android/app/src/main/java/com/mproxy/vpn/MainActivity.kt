@@ -1159,9 +1159,10 @@ class MainActivity : AppCompatActivity() {
 
             for (pkg in packages) {
                 val launchIntent = pm.getLaunchIntentForPackage(pkg.packageName)
+                val appInfo = pkg.applicationInfo ?: continue  // API 35: applicationInfo is nullable
                 if (launchIntent != null && pkg.packageName != packageName) {
-                    val label = pkg.applicationInfo.loadLabel(pm).toString()
-                    val icon = pkg.applicationInfo.loadIcon(pm)
+                    val label = appInfo.loadLabel(pm).toString()
+                    val icon = appInfo.loadIcon(pm)
                     val isSelected = currentSelection.contains(pkg.packageName)
                     appsList.add(AppInfo(label, pkg.packageName, icon, isSelected))
                 }
