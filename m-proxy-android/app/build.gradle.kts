@@ -3,7 +3,6 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-// Read signing properties from local.properties (not committed to git)
 import java.util.Properties
 val localProps = Properties()
 val localPropsFile = rootProject.file("local.properties")
@@ -13,14 +12,14 @@ if (localPropsFile.exists()) {
 
 android {
     namespace = "com.mproxy.vpn"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.mproxy.vpn"
         minSdk = 24
-        targetSdk = 35
-        versionCode = 6
-        versionName = "1.3.0"
+        targetSdk = 34
+        versionCode = 5
+        versionName = "1.2.2"
     }
 
     signingConfigs {
@@ -56,8 +55,14 @@ android {
         }
     }
 
-    // APK splits removed: AAB (Android App Bundle) handles ABI splits automatically
-    // This is required for Play Store submission
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = false
+        }
+    }
 
     packaging {
         resources {

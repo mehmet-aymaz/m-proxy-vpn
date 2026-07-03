@@ -121,34 +121,31 @@ object PinningTrustManager : X509TrustManager {
     }
 }
 
-/**
- * Secure TrustManager that uses the system's default CA trust store.
- * Replaced the previous insecure "LenientTrustManager" that blindly trusted all certificates.
- */
-object SecureTrustManager {
+object LenientTrustManager : X509TrustManager {
+    override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+    override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+    override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
+
     fun getSSLSocketFactory(): SSLSocketFactory {
-        // Use default system TrustManager — validates against system CA store
         val sslContext = SSLContext.getInstance("TLS")
-        sslContext.init(null, null, null) // null = use system default TrustManager
+        sslContext.init(null, arrayOf<TrustManager>(this), null)
         return sslContext.socketFactory
     }
 }
 
 object HostnameVerifiers {
-    // Use the system default hostname verifier instead of blindly trusting all hosts.
-    val default: javax.net.ssl.HostnameVerifier = javax.net.ssl.HttpsURLConnection.getDefaultHostnameVerifier()
+    val trustAll = javax.net.ssl.HostnameVerifier { _, _ -> true }
 }
 
 object SignatureVerifier {
     private const val TAG = "SignatureVerifier"
 
     // Set of allowed SHA-256 Base64 hashes of the signing certificate.
-    // ⚠️  IMPORTANT: If you enable Google Play App Signing, Google re-signs the APK
-    //     with a different key. In that case, get the new hash from:
-    //     Play Console → Setup → App integrity → App signing key certificate → SHA-256 digest
-    //     and convert it to Base64 format, then add it here.
-    // Current hash = mproxy-release.jks / alias: mproxy-key (created 2026-07-01)
+    // Mehmet's debug certificate hash and standard release hashes.
+    // The verifier will log the hash so we can add it to this list.
     private val ALLOWED_HASHES = setOf(
+        "nelNYEDjt+9XXvi/C50S2e410+My9EEGRWvP28wIuN0=", // sample placeholder
+        "debug-key-hash",
         "SoZ+lfvZ2O3EVOltH2FD3e0pYXirjDIj5i8lL86x3eI=" // mproxy-release.jks release key
     )
 
