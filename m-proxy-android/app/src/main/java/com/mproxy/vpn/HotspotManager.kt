@@ -669,11 +669,13 @@ object HotspotManager {
                                 } else if (requestLine.contains("/whoami")) {
                                     val uuid = ProfileStorage.getUuid(appContext)
                                     val remark = ProfileStorage.getRemark(appContext)
+                                    val apiUrl = "https://wmehmet.web.tr:8443/api"
 
                                     val responseJson = """
                                         {
                                           "uuid": "$uuid",
-                                          "remark": "$remark"
+                                          "remark": "$remark",
+                                          "api_url": "$apiUrl"
                                         }
                                     """.trimIndent()
 
