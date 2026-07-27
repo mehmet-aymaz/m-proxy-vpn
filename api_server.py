@@ -4,6 +4,7 @@ import sqlite3
 import json
 import os
 import time
+import datetime
 import socketserver
 import socket
 import threading
@@ -81,7 +82,120 @@ def format_bytes(b):
     return f"{b:.2f} PB"
 
 
-def get_profile_info(client_row):
+def init_history_db(conn):
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS m_proxy_user_state (
+                email TEXT PRIMARY KEY,
+                last_up INTEGER,
+                last_down INTEGER,
+                last_update_month TEXT
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS m_proxy_monthly_traffic (
+                email TEXT,
+                year_month TEXT,
+                used_bytes INTEGER,
+                PRIMARY KEY (email, year_month)
+            )
+        """)
+        
+        # Safe migration: add last_update_month column if it does not exist
+        cursor.execute("PRAGMA table_info(m_proxy_user_state)")
+        columns = [info[1] for info in cursor.fetchall()]
+        if "last_update_month" not in columns:
+            cursor.execute("ALTER TABLE m_proxy_user_state ADD COLUMN last_update_month TEXT")
+            
+        conn.commit()
+    except Exception as e:
+        print(f"Error initializing history tables: {e}")
+
+
+def update_and_get_monthly_traffic(conn, email, up, down):
+    if not email:
+        return 0
+    
+    up = up or 0
+    down = down or 0
+    
+    try:
+        cursor = conn.cursor()
+        now = datetime.datetime.now()
+        current_month = now.strftime("%Y-%m")
+        
+        # Check if user state exists
+        cursor.execute("SELECT last_up, last_down, last_update_month FROM m_proxy_user_state WHERE email = ?", (email,))
+        row = cursor.fetchone()
+        
+        if row is None:
+            # First time seeing this user. Initialize state.
+            cursor.execute(
+                "INSERT INTO m_proxy_user_state (email, last_up, last_down, last_update_month) VALUES (?, ?, ?, ?)",
+                (email, up, down, current_month)
+            )
+            # Store 0 as the starting traffic for this month (we count delta from this baseline)
+            cursor.execute(
+                "INSERT OR REPLACE INTO m_proxy_monthly_traffic (email, year_month, used_bytes) VALUES (?, ?, 0)",
+                (email, current_month)
+            )
+            conn.commit()
+            return 0
+        else:
+            last_up = row[0] or 0
+            last_down = row[1] or 0
+            last_update_month = row[2]
+            
+            # Check if it's a new month
+            if last_update_month != current_month:
+                # Month changed! Reset the monthly counter for this user to 0,
+                # and update their baseline in m_proxy_user_state to current up and down.
+                cursor.execute(
+                    "UPDATE m_proxy_user_state SET last_up = ?, last_down = ?, last_update_month = ? WHERE email = ?",
+                    (up, down, current_month, email)
+                )
+                cursor.execute(
+                    "INSERT OR REPLACE INTO m_proxy_monthly_traffic (email, year_month, used_bytes) VALUES (?, ?, 0)",
+                    (email, current_month)
+                )
+                conn.commit()
+                return 0
+            
+            # Same month, calculate delta
+            delta_up = up - last_up if up >= last_up else up
+            delta_down = down - last_down if down >= last_down else down
+            delta = delta_up + delta_down
+            
+            # Get current monthly traffic
+            cursor.execute(
+                "SELECT used_bytes FROM m_proxy_monthly_traffic WHERE email = ? AND year_month = ?",
+                (email, current_month)
+            )
+            m_row = cursor.fetchone()
+            monthly_bytes = m_row[0] if m_row else 0
+            
+            if delta > 0 or m_row is None:
+                monthly_bytes += delta
+                cursor.execute(
+                    "INSERT OR REPLACE INTO m_proxy_monthly_traffic (email, year_month, used_bytes) VALUES (?, ?, ?)",
+                    (email, current_month, monthly_bytes)
+                )
+                
+            # Always update state
+            cursor.execute(
+                "UPDATE m_proxy_user_state SET last_up = ?, last_down = ? WHERE email = ?",
+                (up, down, email)
+            )
+            conn.commit()
+            return monthly_bytes
+            
+    except Exception as e:
+        print(f"Error updating monthly traffic: {e}")
+        return 0
+
+
+def get_profile_info(client_row, conn=None):
     remark = client_row.get("email", "")
     expiry_time = client_row.get("expiry_time", 0) or client_row.get("expiryTime", 0) or 0
     now_ms = int(time.time() * 1000)
@@ -105,7 +219,7 @@ def get_profile_info(client_row):
     used_bytes = (client_row.get("up", 0) or 0) + (client_row.get("down", 0) or 0)
     total_bytes = client_row.get("total", 0) or 0
 
-    return {
+    profile_dict = {
         "remark": remark,
         "expiryTime": expiry_time,
         "expiryStatus": expiry_status,
@@ -114,6 +228,50 @@ def get_profile_info(client_row):
         "usedBytes": used_bytes,
         "usedFormatted": format_bytes(used_bytes),
     }
+
+    if conn is not None:
+        init_history_db(conn)
+        monthly_bytes = update_and_get_monthly_traffic(conn, remark, client_row.get("up", 0) or 0, client_row.get("down", 0) or 0)
+        profile_dict["monthlyUsedBytes"] = monthly_bytes
+        profile_dict["monthlyUsedFormatted"] = format_bytes(monthly_bytes)
+    else:
+        profile_dict["monthlyUsedBytes"] = used_bytes
+        profile_dict["monthlyUsedFormatted"] = format_bytes(used_bytes)
+
+    return profile_dict
+
+
+def start_background_traffic_updater():
+    def updater_loop():
+        # Delay initial run slightly to allow main server to boot
+        time.sleep(10)
+        while True:
+            try:
+                if os.path.exists(DB_PATH):
+                    # Connect to SQLite with a 30s timeout to avoid database locks
+                    conn = sqlite3.connect(DB_PATH, timeout=30.0)
+                    conn.row_factory = sqlite3.Row
+                    init_history_db(conn)
+                    
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT email, up, down FROM client_traffics")
+                    rows = cursor.fetchall()
+                    for row in rows:
+                        email = row["email"]
+                        up = row["up"] or 0
+                        down = row["down"] or 0
+                        if email:
+                            update_and_get_monthly_traffic(conn, email, up, down)
+                    conn.close()
+            except Exception as e:
+                print(f"Error in background traffic updater: {e}")
+            
+            # Run every 10 minutes (600 seconds)
+            time.sleep(600)
+
+    t = threading.Thread(target=updater_loop, daemon=True, name="TrafficUpdater")
+    t.start()
+    print("Background traffic updater thread started successfully.")
 
 
 class WebServerHandler(BaseHTTPRequestHandler):
@@ -334,6 +492,61 @@ class WebServerHandler(BaseHTTPRequestHandler):
 </html>"""
             self.wfile.write(html.encode('utf-8'))
 
+        # ── API: DEBUG INFO ───────────────────────────────────────────────────
+        elif parsed_url.path.startswith('/debug'):
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json; charset=utf-8')
+            origin = self.headers.get('Origin')
+            if self.is_allowed_origin(origin):
+                self.send_header('Access-Control-Allow-Origin', origin)
+            self.end_headers()
+            
+            debug_info = {}
+            if os.path.exists(DB_PATH):
+                try:
+                    conn = sqlite3.connect(DB_PATH, timeout=30.0)
+                    conn.row_factory = sqlite3.Row
+                    cursor = conn.cursor()
+                    
+                    # Get table schemas
+                    cursor.execute("SELECT name, sql FROM sqlite_master WHERE type='table'")
+                    tables = {row['name']: row['sql'] for row in cursor.fetchall()}
+                    debug_info['tables'] = tables
+                    
+                    # Get counts
+                    try:
+                        cursor.execute("SELECT COUNT(*) FROM m_proxy_user_state")
+                        debug_info['user_state_count'] = cursor.fetchone()[0]
+                    except Exception as e:
+                        debug_info['user_state_count_error'] = str(e)
+                        
+                    try:
+                        cursor.execute("SELECT COUNT(*) FROM m_proxy_monthly_traffic")
+                        debug_info['monthly_traffic_count'] = cursor.fetchone()[0]
+                    except Exception as e:
+                        debug_info['monthly_traffic_count_error'] = str(e)
+                    
+                    # Get samples
+                    try:
+                        cursor.execute("SELECT * FROM m_proxy_user_state LIMIT 5")
+                        debug_info['user_states_sample'] = [dict(r) for r in cursor.fetchall()]
+                    except Exception as e:
+                        debug_info['user_states_sample_error'] = str(e)
+                        
+                    try:
+                        cursor.execute("SELECT * FROM m_proxy_monthly_traffic LIMIT 5")
+                        debug_info['monthly_traffics_sample'] = [dict(r) for r in cursor.fetchall()]
+                    except Exception as e:
+                        debug_info['monthly_traffics_sample_error'] = str(e)
+                    
+                    conn.close()
+                except Exception as e:
+                    debug_info['error'] = str(e)
+            else:
+                debug_info['error'] = f"Database path {DB_PATH} does not exist"
+                
+            self.wfile.write(json.dumps(debug_info, ensure_ascii=False).encode('utf-8'))
+
         # ── API: UUID SORGULAMA ───────────────────────────────────────────────
         elif parsed_url.path.startswith('/api'):
             query = parsed_url.query
@@ -364,7 +577,7 @@ class WebServerHandler(BaseHTTPRequestHandler):
 
             if uuid_to_find and os.path.exists(DB_PATH):
                 try:
-                    conn = sqlite3.connect(DB_PATH)
+                    conn = sqlite3.connect(DB_PATH, timeout=30.0)
                     conn.row_factory = sqlite3.Row
                     cursor = conn.cursor()
                     cursor.execute("SELECT * FROM inbounds WHERE protocol='vless'")
@@ -403,10 +616,8 @@ class WebServerHandler(BaseHTTPRequestHandler):
                         if traffic_row:
                             traffic_info = dict(traffic_row)
 
-                    conn.close()
-
                     if links_list and user_info:
-                        profile = get_profile_info(traffic_info) if traffic_info else {
+                        profile = get_profile_info(traffic_info, conn) if traffic_info else {
                             "remark": user_info.get("email", ""),
                             "expiryTime": user_info.get("expiryTime", 0),
                             "expiryStatus": "unlimited",
@@ -414,8 +625,15 @@ class WebServerHandler(BaseHTTPRequestHandler):
                             "totalGB": 0,
                             "usedBytes": 0,
                             "usedFormatted": "0 B",
+                            "monthlyUsedBytes": 0,
+                            "monthlyUsedFormatted": "0 B",
                         }
+                    else:
+                        profile = None
 
+                    conn.close()
+
+                    if links_list and user_info:
                         response_data = {
                             "success": True,
                             "link": links_list[0]["link"],
@@ -441,6 +659,7 @@ class WebServerHandler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     start_systemd_watchdog()
+    start_background_traffic_updater()
     print(f"API sunucusu port {PORT}'da baslatildi")
     server = ThreadedHTTPServer(('0.0.0.0', PORT), WebServerHandler)
     try:

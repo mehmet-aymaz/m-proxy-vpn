@@ -13678,6 +13678,7 @@
         disconnecting: "Kopar\u0131l\u0131yor\u2026",
         enterUuidWarning: "UUID girmek i\xe7in dokunun",
         statTraffic: "TOPLAM TRAF\u0130K",
+        statMonthlyTraffic: "AYLIK TRAF\u0130K",
         statIp: "IP ADRES\u0130",
         statNetwork: "A\u011e T\xdcR\xdc",
         statRemaining: "KALAN S\xdcRE",
@@ -13765,6 +13766,7 @@
         disconnecting: "Disconnecting\u2026",
         enterUuidWarning: "Tap to enter UUID",
         statTraffic: "TOTAL TRAFFIC",
+        statMonthlyTraffic: "MONTHLY TRAFFIC",
         statIp: "IP ADDRESS",
         statNetwork: "NETWORK TYPE",
         statRemaining: "REMAINING",
@@ -14076,34 +14078,39 @@
       n = e.label,
       r = e.value,
       a = e.accent,
-      o = e.onClick;
-    return (0, $.jsxs)("div", {
+      o = e.onClick,
+      s = e.fade;
+    return (0, $.jsx)("div", {
       onClick: o,
       className:
         "glass-panel rounded-xl p-3 flex flex-col gap-1 h-[60px] justify-center " + (o ? "cursor-pointer active:scale-[0.97] transition-all duration-200" : ""),
-      children: [
-        (0, $.jsxs)("div", {
-          className: "flex items-center gap-1.5 drop-shadow-md",
-          children: [
-            (0, $.jsx)(t, {
-              size: 13,
-              className: "text-cyan-300 flex-shrink-0",
-            }),
-            (0, $.jsx)("span", {
-              className:
-                "text-[10px] text-white/70 tracking-wider font-bold truncate",
-              children: n,
-            }),
-          ],
-        }),
-        (0, $.jsx)("span", {
-          className:
-            "text-[13px] font-extrabold truncate drop-shadow-md ".concat(
-              a || "text-white",
-            ),
-          children: r,
-        }),
-      ],
+      children: (0, $.jsxs)("div", {
+        style: { opacity: s ? 0 : 1, transition: "opacity 0.1s ease-in-out" },
+        className: "flex flex-col gap-1 w-full justify-center",
+        children: [
+          (0, $.jsxs)("div", {
+            className: "flex items-center gap-1.5 drop-shadow-md",
+            children: [
+              (0, $.jsx)(t, {
+                size: 13,
+                className: "text-cyan-300 flex-shrink-0",
+              }),
+              (0, $.jsx)("span", {
+                className:
+                  "text-[10px] text-white/70 tracking-wider font-bold truncate",
+                children: n,
+              }),
+            ],
+          }),
+          (0, $.jsx)("span", {
+            className:
+              "text-[13px] font-extrabold truncate drop-shadow-md ".concat(
+                a || "text-white",
+              ),
+            children: r,
+          }),
+        ],
+      }),
     });
   }
   function se() {
@@ -14275,6 +14282,8 @@
           expiryStatus: "unlimited",
           remainingDays: 0,
           usedFormatted: "0 B",
+          monthlyUsedBytes: 0,
+          monthlyUsedFormatted: "0 B",
         }),
         2,
       ),
@@ -14307,6 +14316,12 @@
       Nt = d((0, r.useState)(0), 2),
       Et = Nt[0],
       Ct = Nt[1],
+      monthlyToggleState = d((0, r.useState)(!1), 2),
+      showMonthly = monthlyToggleState[0],
+      setShowMonthly = monthlyToggleState[1],
+      trafficFadeState = d((0, r.useState)(!1), 2),
+      trafficFade = trafficFadeState[0],
+      setTrafficFade = trafficFadeState[1],
       jt = d((0, r.useState)(0), 2),
       zt = jt[0],
       Pt = jt[1],
@@ -15010,6 +15025,15 @@
           e || He(!1);
         }
       }, [pe, b, m, Z, Ze, Nn, Cn, t, a, Dt]),
+      handleTrafficToggle = () => {
+        setTrafficFade(true);
+        setTimeout(() => {
+          setShowMonthly(prev => !prev);
+          setTimeout(() => {
+            setTrafficFade(false);
+          }, 100);
+        }, 100);
+      },
       _n = [
         { id: "logs", icon: E, label: a.logs },
         { id: "refresh", icon: C, label: a.refresh },
@@ -15340,9 +15364,11 @@
                 }),
                 (0, $.jsx)(ie, {
                   icon: A,
-                  label: l(a.statTraffic),
-                  value: Ze.usedFormatted,
+                  label: showMonthly ? l(a.statMonthlyTraffic) : l(a.statTraffic),
+                  value: showMonthly ? (Ze.monthlyUsedFormatted || "0 B") : Ze.usedFormatted,
                   accent: "text-emerald-300",
+                  onClick: handleTrafficToggle,
+                  fade: trafficFade,
                 }),
                 (0, $.jsx)(ie, {
                   icon: I,
@@ -15970,6 +15996,8 @@
                                             expiryStatus: "unlimited",
                                             remainingDays: 0,
                                             usedFormatted: "0 B",
+                                            monthlyUsedBytes: 0,
+                                            monthlyUsedFormatted: "0 B",
                                           }),
                                           nt("---"),
                                           Nn(a.toastResetSuccess, "info"));
