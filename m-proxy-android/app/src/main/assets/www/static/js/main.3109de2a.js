@@ -14760,10 +14760,11 @@
         }
         ce("getCurrentIP");
         ce("getNetworkType");
+        const isIgnored = ce("checkBatteryOptimization");
+        yt(!!isIgnored);
       };
       sync();
       b.trim() && jn(b);
-      !1 === ce("checkBatteryOptimization") && yt(!1);
       const handleVis = () => {
         if (document.visibilityState === "visible") {
           sync();

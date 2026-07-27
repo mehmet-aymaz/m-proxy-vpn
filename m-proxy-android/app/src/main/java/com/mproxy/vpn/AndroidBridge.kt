@@ -295,6 +295,26 @@ class AndroidBridge(private val context: Context) {
                 }
             } catch (e: Exception) {
                 Log.e("AndroidBridge", "ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS failed: ${e.message}")
+                // Fallback 1: Open system-wide battery optimization settings list
+                try {
+                    val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    context.startActivity(intent)
+                    logToWeb("Pil optimizasyonu ayar listesi acildi.", "info")
+                } catch (ex: Exception) {
+                    // Fallback 2: Open App Info Settings Details
+                    try {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.parse("package:${context.packageName}")
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+                        context.startActivity(intent)
+                        logToWeb("Uygulama detay ayarlari acildi.", "info")
+                    } catch (ex2: Exception) {
+                        Log.e("AndroidBridge", "All battery optimization intents failed: ${ex2.message}")
+                    }
+                }
             }
         }
     }
