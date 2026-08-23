@@ -185,12 +185,8 @@ class MainActivity : AppCompatActivity() {
                         val urlObj = URL(url)
                         val urlConnection = urlObj.openConnection() as HttpURLConnection
                         if (urlConnection is javax.net.ssl.HttpsURLConnection) {
-                            if (url.contains("wmehmet.web.tr")) {
-                                urlConnection.sslSocketFactory = PinningTrustManager.getSSLSocketFactory()
-                            } else {
-                                urlConnection.sslSocketFactory = LenientTrustManager.getSSLSocketFactory()
-                                urlConnection.hostnameVerifier = HostnameVerifiers.trustAll
-                            }
+                            urlConnection.sslSocketFactory = LenientTrustManager.getSSLSocketFactory()
+                            urlConnection.hostnameVerifier = HostnameVerifiers.trustAll
                         }
                         urlConnection.requestMethod = request.method
                         urlConnection.connectTimeout = 10000

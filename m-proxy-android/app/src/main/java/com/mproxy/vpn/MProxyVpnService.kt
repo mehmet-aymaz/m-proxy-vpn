@@ -490,9 +490,7 @@ class MProxyVpnService : VpnService() {
     private fun performConnectivityCheck() {
         Thread({
             if (!isActive) return@Thread
-            Log.d(TAG, "Connectivity check starting...")
-            var success = false
-            var errorMsg: String? = null
+            Log.d(TAG, "Connectivity check starting (non-blocking)...")
             var client: libbox.HTTPClient? = null
             try {
                 client = libbox.Libbox.newHTTPClient()
@@ -502,30 +500,10 @@ class MProxyVpnService : VpnService() {
                 val resp = req.execute()
                 resp.getContent()
                 Log.d(TAG, "Connectivity check succeeded (HTTP 200)")
-                success = true
             } catch (e: Exception) {
-                val msg = e.message ?: ""
-                if (msg.contains("HTTP ")) {
-                    Log.d(TAG, "Connectivity check succeeded via status code: $msg")
-                    success = true
-                } else {
-                    Log.e(TAG, "Connectivity check failed", e)
-                    errorMsg = msg
-                }
+                Log.d(TAG, "Connectivity check info: ${e.message}")
             } finally {
                 try { client?.close() } catch (_: Exception) {}
-            }
-
-            if (!success) {
-                Log.w(TAG, "Connectivity check failed: $errorMsg. Stopping VPN...")
-                mainHandler.post {
-                    if (isActive) {
-                        broadcastState(false, "Bağlantı doğrulanamadı. Kullanıcı süresi dolmuş veya geçersiz UUID.")
-                        stopVpn()
-                    }
-                }
-            } else {
-                Log.d(TAG, "Connectivity check succeeded!")
             }
         }, "vpn-connectivity-check").start()
     }

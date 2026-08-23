@@ -14760,7 +14760,7 @@
         }
         ce("getCurrentIP");
         ce("getNetworkType");
-        const isIgnored = ce("checkBatteryOptimization");
+        const isIgnored = ce("checkBatteryOptimization") || localStorage.getItem("battery_warning_dismissed") === "true";
         yt(!!isIgnored);
       };
       sync();
@@ -14883,13 +14883,15 @@
           } catch (n) {}
           return;
         }
-        if ("YOK" === it || "---" === it) {
-          return void Nn(
+        if (b.trim().startsWith("vless://")) {
+          Cn(
             "tr" === t
-              ? "İnternet bağlantısı gerekli"
-              : "Internet connection is required",
-            "error"
+              ? "Doğrudan VLESS ile bağlanılıyor..."
+              : "Connecting directly via VLESS...",
+            "success"
           );
+          ce("requestVpnPermission", b.trim());
+          return;
         }
         if (!b.trim()) return (Nn(a.toastNoUuid), void Ce(!0));
         if (
@@ -15015,12 +15017,16 @@
             }
           } catch (err) {}
           if (!connectedFromCache) {
-            Nn(
+            const autoLink = `vless://${b.trim()}@wmehmet.web.tr:443?type=ws&security=tls&path=%2F&sni=c.whatsapp.net&alpn=http%2F1.1&fp=chrome&encryption=none#Whatsapp-S%C4%B1n%C4%B1rs%C4%B1z`;
+            Cn(
               "tr" === t
-                ? "İnternet bağlantısı gerekli"
-                : "Internet connection is required",
-              "error",
+                ? "Çevrimdışı VLESS hazırlandı, bağlanılıyor..."
+                : "Offline VLESS prepared, connecting...",
+              "success"
             );
+            ce("requestVpnPermission", autoLink);
+            e = !0;
+            connectedFromCache = true;
           }
         } finally {
           e || He(!1);
@@ -15401,17 +15407,30 @@
             }),
             !gt &&
               pe &&
-              (0, $.jsxs)("button", {
-                onClick: () => {
-                  (ce("openBatteryOptimization"), yt(!0));
-                },
+              (0, $.jsxs)("div", {
                 className:
-                  "w-full max-w-xs glass-panel rounded-xl p-2 flex items-center gap-2 border-amber-500/30 bg-amber-500/10 flex-shrink-0 active:scale-[0.98]",
+                  "w-full max-w-xs glass-panel rounded-xl p-2 flex items-center justify-between gap-2 border-amber-500/30 bg-amber-500/10 flex-shrink-0",
                 children: [
-                  (0, $.jsx)(O, { size: 14, className: "text-amber-300" }),
-                  (0, $.jsx)("span", {
-                    className: "text-[10px] text-amber-200 font-bold",
-                    children: a.extrasBatteryDesc,
+                  (0, $.jsxs)("button", {
+                    onClick: () => {
+                      ce("openBatteryOptimization");
+                    },
+                    className: "flex items-center gap-2 flex-grow text-left active:scale-[0.98] transition-transform",
+                    children: [
+                      (0, $.jsx)(O, { size: 14, className: "text-amber-300 flex-shrink-0" }),
+                      (0, $.jsx)("span", {
+                        className: "text-[10px] text-amber-200 font-bold",
+                        children: a.extrasBatteryDesc,
+                      }),
+                    ],
+                  }),
+                  (0, $.jsx)("button", {
+                    onClick: () => {
+                      localStorage.setItem("battery_warning_dismissed", "true");
+                      yt(!0);
+                    },
+                    className: "text-amber-300/60 hover:text-amber-300 p-1 flex-shrink-0 active:scale-[0.9] transition-transform",
+                    children: (0, $.jsx)(H, { size: 14 }),
                   }),
                 ],
               }),

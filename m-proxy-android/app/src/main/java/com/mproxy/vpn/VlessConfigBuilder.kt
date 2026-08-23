@@ -20,17 +20,21 @@ object VlessConfigBuilder {
         val path = uri.getQueryParameter("path") ?: "/"
         val fp = uri.getQueryParameter("fp") ?: "chrome"
 
-        // Resolve dynamic DNS configuration
+        // Resolve dynamic DNS configuration — Use DNS-over-HTTPS (DoH) over TCP for zero-balance proxy tunnels
         val dnsMode = AppSettings.getDnsMode(context)
         val remoteDnsIp = when (dnsMode) {
-            "GOOGLE" -> "8.8.8.8"
-            "CLOUDFLARE" -> "1.1.1.1"
-            "ADGUARD" -> "94.140.14.14"
+            "GOOGLE" -> "https://8.8.8.8/dns-query"
+            "CLOUDFLARE" -> "https://1.1.1.1/dns-query"
+            "ADGUARD" -> "https://dns.adguard-dns.com/dns-query"
             "CUSTOM" -> {
                 val custom = AppSettings.getCustomDnsAddress(context)
-                if (custom.isNotEmpty()) custom else "8.8.8.8"
+                if (custom.isNotEmpty()) {
+                    if (!custom.startsWith("https://") && !custom.startsWith("tcp://")) {
+                        "tcp://$custom"
+                    } else custom
+                } else "https://1.1.1.1/dns-query"
             }
-            else -> "8.8.8.8"
+            else -> "https://1.1.1.1/dns-query"
         }
 
         val config = JSONObject().apply {
@@ -48,15 +52,18 @@ object VlessConfigBuilder {
                     })
                     put(JSONObject().apply {
                         put("tag", "dns-direct")
-                        put("address", "1.1.1.1")
+                        put("address", "local")
                         put("detour", "direct")
                     })
                 })
                 put("rules", org.json.JSONArray().apply {
-                    // Direct DNS queries for direct domains or direct rules
+                    // Direct DNS queries for the VPN server domain itself
                     put(JSONObject().apply {
                         put("domain", org.json.JSONArray().apply {
                             put(host)
+                            if (sni.isNotEmpty() && sni != host) {
+                                put(sni)
+                            }
                         })
                         put("server", "dns-direct")
                     })
@@ -76,11 +83,9 @@ object VlessConfigBuilder {
                 put(JSONObject().apply {
                     put("type", "tun")
                     put("tag", "tun-in")
-                    put("interface_name", "tun0")
                     put("inet4_address", "172.19.0.1/30")
-                    put("inet6_address", "fdfe:5a4e:8b0e::1/126")
-                    put("auto_route", true)
-                    put("strict_route", true)
+                    put("auto_route", false)
+                    put("strict_route", false)
                     put("stack", "gvisor")
                     put("sniff", true)
                     put("sniff_override_destination", true)
@@ -100,13 +105,6 @@ object VlessConfigBuilder {
                         }
                     }
                 })
-                put(JSONObject().apply {
-                    put("type", "mixed")
-                    put("tag", "mixed-in")
-                    put("listen", "0.0.0.0")
-                    put("listen_port", 10808)
-                    put("tcp_fast_open", true)
-                })
             })
 
             put("outbounds", org.json.JSONArray().apply {
@@ -117,7 +115,6 @@ object VlessConfigBuilder {
                     put("server", host)
                     put("server_port", port)
                     put("uuid", uuid)
-                    put("tcp_fast_open", true)
 
                     val flow = uri.getQueryParameter("flow")
                     if (!flow.isNullOrEmpty() && type != "ws" && type != "grpc") {
@@ -142,19 +139,24 @@ object VlessConfigBuilder {
                         put("tls", JSONObject().apply {
                             put("enabled", true)
                             put("server_name", sni)
+                            put("insecure", true)
                             
-                            val insecureParam = uri.getQueryParameter("insecure")
-                            val allowInsecureParam = uri.getQueryParameter("allowInsecure")
-                            val isInsecure = (insecureParam == "1" || insecureParam?.equals("true", ignoreCase = true) == true) ||
-                                            (allowInsecureParam == "1" || allowInsecureParam?.equals("true", ignoreCase = true) == true) ||
-                                            (security == "tls" && sni != host)
-                            if (isInsecure) {
-                                put("insecure", true)
+                            val alpnParam = uri.getQueryParameter("alpn")
+                            val alpnList = if (!alpnParam.isNullOrEmpty()) {
+                                alpnParam.split(",").map { it.trim() }
+                            } else {
+                                listOf("http/1.1")
                             }
-                            
                             put("alpn", org.json.JSONArray().apply {
-                                put("http/1.1")
+                                alpnList.forEach { put(it) }
                             })
+                            
+                            val fpParam = uri.getQueryParameter("fp") ?: fp
+                            put("utls", JSONObject().apply {
+                                put("enabled", true)
+                                put("fingerprint", fpParam)
+                            })
+                            
                             if (security == "reality") {
                                 put("reality", JSONObject().apply {
                                     put("enabled", true)
@@ -196,27 +198,7 @@ object VlessConfigBuilder {
                         })
                         put("outbound", "direct")
                     })
-                    // Block/Direct local connections
-                    put(JSONObject().apply {
-                        put("ip_cidr", "10.0.0.0/8")
-                        put("outbound", "direct")
-                    })
-                    put(JSONObject().apply {
-                        put("ip_cidr", "172.16.0.0/12")
-                        put("outbound", "direct")
-                    })
-                    put(JSONObject().apply {
-                        put("ip_cidr", "192.168.0.0/16")
-                        put("outbound", "direct")
-                    })
-                    put(JSONObject().apply {
-                        put("ip_cidr", "127.0.0.0/8")
-                        put("outbound", "direct")
-                    })
-                    put(JSONObject().apply {
-                        put("ip_cidr", "169.254.0.0/16")
-                        put("outbound", "direct")
-                    })
+                    // Direct private local connections
                     put(JSONObject().apply {
                         put("ip_is_private", true)
                         put("outbound", "direct")

@@ -167,11 +167,7 @@ class AndroidBridge(private val context: Context) {
             "https://ipinfo.io/ip",
             "https://wtfismyip.com/text"
         )
-        val proxy = if (useVpnProxy) {
-            java.net.Proxy(java.net.Proxy.Type.HTTP, InetSocketAddress("127.0.0.1", 10808))
-        } else {
-            java.net.Proxy.NO_PROXY
-        }
+        val proxy = java.net.Proxy.NO_PROXY
 
         for (urlStr in providers) {
             try {
@@ -662,19 +658,39 @@ class AndroidBridge(private val context: Context) {
 
     private fun detectNetworkType(): String {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val network = connectivityManager.activeNetwork ?: return "YOK"
-        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return "YOK"
+        
+        // 1. Önce aktif ağı kontrol et
+        val activeNet = connectivityManager.activeNetwork
+        val activeCaps = activeNet?.let { connectivityManager.getNetworkCapabilities(it) }
+        
+        if (activeCaps != null) {
+            if (activeCaps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                return "WIFI"
+            }
+            if (activeCaps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+                return "ETHERNET"
+            }
+            if (activeCaps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                return "CELLULAR_LTE"
+            }
+        }
 
-        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
-            return "WIFI"
+        // 2. Eğer activeNetwork null ise (genel internet yok / sadece WhatsApp paketi var / ünlem işareti varsa)
+        // Tüm ağları tara ve hücresel verinin aktif olup olmadığını kontrol et
+        for (net in connectivityManager.allNetworks) {
+            val caps = connectivityManager.getNetworkCapabilities(net) ?: continue
+            if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                return "WIFI"
+            }
+            if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                return "CELLULAR_LTE"
+            }
+            if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+                return "ETHERNET"
+            }
         }
-        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
-            return "ETHERNET"
-        }
-        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
-            return "CELLULAR_LTE"
-        }
-        return "UNKNOWN"
+
+        return "YOK"
     }
 
     fun postToWeb(jsCode: String) {
