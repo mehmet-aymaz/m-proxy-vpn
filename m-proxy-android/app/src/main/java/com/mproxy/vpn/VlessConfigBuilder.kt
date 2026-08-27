@@ -20,21 +20,17 @@ object VlessConfigBuilder {
         val path = uri.getQueryParameter("path") ?: "/"
         val fp = uri.getQueryParameter("fp") ?: "chrome"
 
-        // Resolve dynamic DNS configuration — Use DNS-over-HTTPS (DoH) over TCP for zero-balance proxy tunnels
+        // Resolve dynamic DNS configuration
         val dnsMode = AppSettings.getDnsMode(context)
         val remoteDnsIp = when (dnsMode) {
-            "GOOGLE" -> "https://8.8.8.8/dns-query"
-            "CLOUDFLARE" -> "https://1.1.1.1/dns-query"
-            "ADGUARD" -> "https://dns.adguard-dns.com/dns-query"
+            "GOOGLE" -> "8.8.8.8"
+            "CLOUDFLARE" -> "1.1.1.1"
+            "ADGUARD" -> "94.140.14.14"
             "CUSTOM" -> {
                 val custom = AppSettings.getCustomDnsAddress(context)
-                if (custom.isNotEmpty()) {
-                    if (!custom.startsWith("https://") && !custom.startsWith("tcp://")) {
-                        "tcp://$custom"
-                    } else custom
-                } else "https://1.1.1.1/dns-query"
+                if (custom.isNotEmpty()) custom else "8.8.8.8"
             }
-            else -> "https://1.1.1.1/dns-query"
+            else -> "8.8.8.8"
         }
 
         val config = JSONObject().apply {
@@ -52,12 +48,12 @@ object VlessConfigBuilder {
                     })
                     put(JSONObject().apply {
                         put("tag", "dns-direct")
-                        put("address", "local")
+                        put("address", "1.1.1.1")
                         put("detour", "direct")
                     })
                 })
                 put("rules", org.json.JSONArray().apply {
-                    // Direct DNS queries for the VPN server domain itself
+                    // Direct DNS queries for direct domains or direct rules
                     put(JSONObject().apply {
                         put("domain", org.json.JSONArray().apply {
                             put(host)
@@ -83,9 +79,11 @@ object VlessConfigBuilder {
                 put(JSONObject().apply {
                     put("type", "tun")
                     put("tag", "tun-in")
+                    put("interface_name", "tun0")
                     put("inet4_address", "172.19.0.1/30")
-                    put("auto_route", false)
-                    put("strict_route", false)
+                    put("inet6_address", "fdfe:5a4e:8b0e::1/126")
+                    put("auto_route", true)
+                    put("strict_route", true)
                     put("stack", "gvisor")
                     put("sniff", true)
                     put("sniff_override_destination", true)
@@ -105,6 +103,13 @@ object VlessConfigBuilder {
                         }
                     }
                 })
+                put(JSONObject().apply {
+                    put("type", "mixed")
+                    put("tag", "mixed-in")
+                    put("listen", "0.0.0.0")
+                    put("listen_port", 10808)
+                    put("tcp_fast_open", true)
+                })
             })
 
             put("outbounds", org.json.JSONArray().apply {
@@ -115,6 +120,7 @@ object VlessConfigBuilder {
                     put("server", host)
                     put("server_port", port)
                     put("uuid", uuid)
+                    put("tcp_fast_open", true)
 
                     val flow = uri.getQueryParameter("flow")
                     if (!flow.isNullOrEmpty() && type != "ws" && type != "grpc") {
@@ -188,13 +194,20 @@ object VlessConfigBuilder {
                 put("rules", org.json.JSONArray().apply {
                     // DNS rules
                     put(JSONObject().apply {
+                        put("protocol", "dns")
+                        put("outbound", "dns-out")
+                    })
+                    put(JSONObject().apply {
                         put("port", org.json.JSONArray().apply { put(53) })
-                        put("action", "hijack-dns")
+                        put("outbound", "dns-out")
                     })
                     // Route proxy server connections directly to prevent routing loop
                     put(JSONObject().apply {
                         put("domain", org.json.JSONArray().apply {
                             put(host)
+                            if (sni.isNotEmpty() && sni != host) {
+                                put(sni)
+                            }
                         })
                         put("outbound", "direct")
                     })

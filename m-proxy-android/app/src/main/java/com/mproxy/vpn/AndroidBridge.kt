@@ -162,19 +162,23 @@ class AndroidBridge(private val context: Context) {
 
     private fun fetchPublicIP(useVpnProxy: Boolean): String? {
         val providers = listOf(
-            "https://api.ipify.org",
-            "https://icanhazip.com",
-            "https://ipinfo.io/ip",
-            "https://wtfismyip.com/text"
+            "http://api.ipify.org",
+            "http://icanhazip.com",
+            "http://ipinfo.io/ip",
+            "http://wtfismyip.com/text"
         )
-        val proxy = java.net.Proxy.NO_PROXY
+        val proxy = if (useVpnProxy) {
+            java.net.Proxy(java.net.Proxy.Type.HTTP, java.net.InetSocketAddress("127.0.0.1", 10808))
+        } else {
+            java.net.Proxy.NO_PROXY
+        }
 
         for (urlStr in providers) {
             try {
                 val url = URL(urlStr)
                 val conn = url.openConnection(proxy) as HttpURLConnection
-                conn.connectTimeout = 3000
-                conn.readTimeout = 3000
+                conn.connectTimeout = 4000
+                conn.readTimeout = 4000
                 conn.connect()
                 if (conn.responseCode == 200) {
                     val stream = conn.inputStream
