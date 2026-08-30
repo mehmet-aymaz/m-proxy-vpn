@@ -20,17 +20,21 @@ object VlessConfigBuilder {
         val path = uri.getQueryParameter("path") ?: "/"
         val fp = uri.getQueryParameter("fp") ?: "chrome"
 
-        // Resolve dynamic DNS configuration
+        // Resolve dynamic DNS configuration — Use DNS-over-HTTPS (DoH) for Zero-Rating & DPI bypass
         val dnsMode = AppSettings.getDnsMode(context)
         val remoteDnsIp = when (dnsMode) {
-            "GOOGLE" -> "8.8.8.8"
-            "CLOUDFLARE" -> "1.1.1.1"
-            "ADGUARD" -> "94.140.14.14"
+            "GOOGLE" -> "https://8.8.8.8/dns-query"
+            "CLOUDFLARE" -> "https://1.1.1.1/dns-query"
+            "ADGUARD" -> "https://dns.adguard-dns.com/dns-query"
             "CUSTOM" -> {
                 val custom = AppSettings.getCustomDnsAddress(context)
-                if (custom.isNotEmpty()) custom else "8.8.8.8"
+                if (custom.isNotEmpty()) {
+                    if (!custom.startsWith("https://") && !custom.startsWith("tcp://")) {
+                        "tcp://$custom"
+                    } else custom
+                } else "https://8.8.8.8/dns-query"
             }
-            else -> "8.8.8.8"
+            else -> "https://8.8.8.8/dns-query"
         }
 
         val config = JSONObject().apply {
@@ -48,12 +52,12 @@ object VlessConfigBuilder {
                     })
                     put(JSONObject().apply {
                         put("tag", "dns-direct")
-                        put("address", "1.1.1.1")
+                        put("address", "local")
                         put("detour", "direct")
                     })
                 })
                 put("rules", org.json.JSONArray().apply {
-                    // Direct DNS queries for direct domains or direct rules
+                    // Direct DNS queries for the VPN server domain itself
                     put(JSONObject().apply {
                         put("domain", org.json.JSONArray().apply {
                             put(host)
@@ -79,11 +83,9 @@ object VlessConfigBuilder {
                 put(JSONObject().apply {
                     put("type", "tun")
                     put("tag", "tun-in")
-                    put("interface_name", "tun0")
                     put("inet4_address", "172.19.0.1/30")
-                    put("inet6_address", "fdfe:5a4e:8b0e::1/126")
-                    put("auto_route", true)
-                    put("strict_route", true)
+                    put("auto_route", false)
+                    put("strict_route", false)
                     put("stack", "gvisor")
                     put("sniff", true)
                     put("sniff_override_destination", true)
@@ -103,6 +105,7 @@ object VlessConfigBuilder {
                         }
                     }
                 })
+                // Native Sing-Box Mixed (HTTP + SOCKS5) Inbound for Hotspot Tethering
                 put(JSONObject().apply {
                     put("type", "mixed")
                     put("tag", "mixed-in")
@@ -140,7 +143,7 @@ object VlessConfigBuilder {
                         }
                     })
 
-                    // TLS / Reality
+                    // TLS / Reality with uTLS
                     if (security == "tls" || security == "xtls" || security == "reality") {
                         put("tls", JSONObject().apply {
                             put("enabled", true)
@@ -169,6 +172,7 @@ object VlessConfigBuilder {
                                     put("public_key", uri.getQueryParameter("pbk") ?: "")
                                     put("short_id", uri.getQueryParameter("sid") ?: "")
                                     put("flow", flow ?: "xtls-rprx-vision")
+                                    put("packet_encoding", "xudp")
                                 })
                             }
                         })
@@ -192,16 +196,16 @@ object VlessConfigBuilder {
                 put("auto_detect_interface", true)
                 put("final", "proxy")
                 put("rules", org.json.JSONArray().apply {
-                    // DNS rules
+                    // Hijack DNS queries to route them over proxy via DoH (bypasses zero-rating DPI block)
                     put(JSONObject().apply {
                         put("protocol", "dns")
-                        put("outbound", "dns-out")
+                        put("action", "hijack-dns")
                     })
                     put(JSONObject().apply {
                         put("port", org.json.JSONArray().apply { put(53) })
-                        put("outbound", "dns-out")
+                        put("action", "hijack-dns")
                     })
-                    // Route proxy server connections directly to prevent routing loop
+                    // Route proxy server connections directly to prevent routing loop (only on VLESS connection port)
                     put(JSONObject().apply {
                         put("domain", org.json.JSONArray().apply {
                             put(host)
@@ -209,12 +213,20 @@ object VlessConfigBuilder {
                                 put(sni)
                             }
                         })
+                        put("port", org.json.JSONArray().apply {
+                            put(port)
+                        })
                         put("outbound", "direct")
                     })
                     // Direct private local connections
                     put(JSONObject().apply {
                         put("ip_is_private", true)
                         put("outbound", "direct")
+                    })
+                    // Forward Hotspot mixed-in traffic to VLESS proxy outbound
+                    put(JSONObject().apply {
+                        put("inbound", org.json.JSONArray().apply { put("mixed-in") })
+                        put("outbound", "proxy")
                     })
                 })
             })
