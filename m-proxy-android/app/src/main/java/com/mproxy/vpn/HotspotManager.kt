@@ -53,6 +53,17 @@ object HotspotManager {
     var clientCount = 0
         private set
 
+    // Keep-Alive & Auto-Restart States (Termal / Sistem kesintilerine karşı otomatik kurtarma)
+    @Volatile
+    var userWantsHotspotActive = false
+        private set
+    @Volatile
+    private var isAutoRestarting = false
+    private val keepAliveHandler = Handler(Looper.getMainLooper())
+    private var keepAliveRunnable: Runnable? = null
+    private var lastTargetSsid: String = ""
+    private var lastTargetPass: String = ""
+
     // Hotspot Traffic Tracking States
     @Volatile
     var hotspotInterface: String? = null
@@ -128,6 +139,8 @@ object HotspotManager {
         val appContext = context.applicationContext
         init(appContext)
         Log.d(TAG, "startSystemHotspot")
+        userWantsHotspotActive = true
+        startKeepAliveWatchdog(appContext)
         
         mainHandler.post {
             AndroidBridge.activeInstance?.logToWeb("Sistem Hotspot ayarları açılıyor...", "info")
@@ -180,7 +193,7 @@ object HotspotManager {
                         startClientMonitoring(appContext)
                     } else {
                         checkCount++
-                        if (checkCount < 30) { // Check for 60 seconds
+                        if (checkCount < 30 || userWantsHotspotActive) {
                             tetherMonitorHandler.postDelayed(this, 2000)
                         } else {
                             AndroidBridge.activeInstance?.logToWeb("Sistem Hotspot IP'si zaman aşımı nedeniyle algılanamadı.", "warn")
@@ -197,6 +210,10 @@ object HotspotManager {
         val appContext = context.applicationContext
         init(appContext)
         Log.d(TAG, "startHotspot: ssid=$targetSsid")
+        userWantsHotspotActive = true
+        lastTargetSsid = targetSsid
+        lastTargetPass = targetPass
+        startKeepAliveWatchdog(appContext)
         
         mainHandler.post {
             AndroidBridge.activeInstance?.logToWeb("WiFi Direct Hotspot başlatılıyor...", "info")
@@ -262,6 +279,7 @@ object HotspotManager {
                 hotspotType = "WifiDirect"
                 ssid = finalSsid
                 password = finalPass
+                isAutoRestarting = false
                 Log.d(TAG, "createGroup success")
                 
                 mainHandler.postDelayed({
@@ -271,15 +289,31 @@ object HotspotManager {
 
             override fun onFailure(reason: Int) {
                 isGroupCreated = false
-                hotspotType = null
                 val errorMsg = "WiFi Direct grubu oluşturulamadı. Hata kodu: $reason"
                 Log.e(TAG, errorMsg)
-                SecurityUtils.getEncryptedPrefs(appContext, "mproxy_vpn_prefs")
-                    .edit().remove("hotspot_was_active").apply()
-                MProxyWidgetProvider.triggerUpdate(appContext)
-                AndroidBridge.activeInstance?.logToWeb(errorMsg, "warn")
-                AndroidBridge.activeInstance?.reportError(errorMsg)
-                AndroidBridge.activeInstance?.postHotspotFailed(reason)
+                if (userWantsHotspotActive) {
+                    Log.w(TAG, "Auto-restart: createGroup geçici başarısız (kod $reason). 3s sonra tekrar denenecek...")
+                    mainHandler.postDelayed({
+                        if (userWantsHotspotActive) {
+                            val mgr = getWifiP2pManager(appContext)
+                            val chn = getP2pChannel(appContext)
+                            if (mgr != null && chn != null) {
+                                createWifiP2pGroup(appContext, mgr, chn, targetSsid, targetPass)
+                            }
+                        } else {
+                            isAutoRestarting = false
+                        }
+                    }, 3000)
+                } else {
+                    hotspotType = null
+                    isAutoRestarting = false
+                    SecurityUtils.getEncryptedPrefs(appContext, "mproxy_vpn_prefs")
+                        .edit().remove("hotspot_was_active").apply()
+                    MProxyWidgetProvider.triggerUpdate(appContext)
+                    AndroidBridge.activeInstance?.logToWeb(errorMsg, "warn")
+                    AndroidBridge.activeInstance?.reportError(errorMsg)
+                    AndroidBridge.activeInstance?.postHotspotFailed(reason)
+                }
             }
         }
 
@@ -360,14 +394,18 @@ object HotspotManager {
                     startClientMonitoring(appContext)
                 } else {
                     isGroupCreated = false
-                    hotspotType = null
-                    SecurityUtils.getEncryptedPrefs(appContext, "mproxy_vpn_prefs")
-                        .edit().remove("hotspot_was_active").apply()
-                    MProxyWidgetProvider.triggerUpdate(appContext)
-                    val errorMsg = "WiFi Direct grup bilgisi alınamadı."
-                    AndroidBridge.activeInstance?.logToWeb(errorMsg, "warn")
-                    AndroidBridge.activeInstance?.reportError(errorMsg)
-                    AndroidBridge.activeInstance?.postHotspotFailed(0)
+                    if (userWantsHotspotActive) {
+                        Log.w(TAG, "WiFi Direct grup bilgisi henüz alınamadı, keep-alive bekleniyor...")
+                    } else {
+                        hotspotType = null
+                        SecurityUtils.getEncryptedPrefs(appContext, "mproxy_vpn_prefs")
+                            .edit().remove("hotspot_was_active").apply()
+                        MProxyWidgetProvider.triggerUpdate(appContext)
+                        val errorMsg = "WiFi Direct grup bilgisi alınamadı."
+                        AndroidBridge.activeInstance?.logToWeb(errorMsg, "warn")
+                        AndroidBridge.activeInstance?.reportError(errorMsg)
+                        AndroidBridge.activeInstance?.postHotspotFailed(0)
+                    }
                 }
             }
         } catch (e: SecurityException) {
@@ -378,7 +416,9 @@ object HotspotManager {
     fun stopHotspot(context: Context) {
         val appContext = context.applicationContext
         init(appContext)
-        Log.d(TAG, "stopHotspot")
+        Log.d(TAG, "stopHotspot (user initiated)")
+        userWantsHotspotActive = false
+        stopKeepAliveWatchdog()
         
         // Hotspot durumunu temizle
         SecurityUtils.getEncryptedPrefs(appContext, "mproxy_vpn_prefs")
@@ -480,7 +520,11 @@ object HotspotManager {
                                     }
                                 } else {
                                     Log.w(TAG, "Monitoring: group is null, meaning it was stopped externally.")
-                                    stopHotspot(appContext)
+                                    if (!userWantsHotspotActive) {
+                                        stopHotspot(appContext)
+                                    } else {
+                                        Log.i(TAG, "Monitoring: userWantsHotspotActive=true, keep-alive watchdog devrede.")
+                                    }
                                 }
                             }
                         } catch (e: SecurityException) {
@@ -516,6 +560,108 @@ object HotspotManager {
             tetherMonitorHandler.removeCallbacks(it)
         }
         tetherMonitorRunnable = null
+    }
+
+    private fun startKeepAliveWatchdog(context: Context) {
+        val appContext = context.applicationContext
+        stopKeepAliveWatchdog()
+
+        keepAliveRunnable = object : Runnable {
+            override fun run() {
+                if (!userWantsHotspotActive) {
+                    Log.d(TAG, "KeepAlive: Kullanıcı hotspot'u durdurdu, watchdog sonlanıyor.")
+                    return
+                }
+
+                val currentType = hotspotType
+                if (currentType == "WifiDirect") {
+                    val manager = getWifiP2pManager(appContext)
+                    val channel = getP2pChannel(appContext)
+                    if (manager != null && channel != null && !isAutoRestarting) {
+                        try {
+                            manager.requestGroupInfo(channel) { group ->
+                                if (group == null && userWantsHotspotActive && !isAutoRestarting) {
+                                    Log.w(TAG, "KeepAlive: WiFi Direct grubu kapandı (ısı/sistem)! Otomatik yeniden başlatılıyor...")
+                                    AndroidBridge.activeInstance?.logToWeb("Sıcaklık veya sistem nedeniyle Hotspot kesildi, otomatik yeniden başlatılıyor...", "warn")
+                                    isAutoRestarting = true
+                                    isGroupCreated = false
+
+                                    mainHandler.postDelayed({
+                                        if (userWantsHotspotActive) {
+                                            val tSsid = if (lastTargetSsid.isNotEmpty()) lastTargetSsid else (ssid ?: "mProxyHotspot")
+                                            val tPass = if (lastTargetPass.isNotEmpty()) lastTargetPass else (password ?: "12345678")
+                                            createWifiP2pGroup(appContext, manager, channel, tSsid, tPass)
+                                        } else {
+                                            isAutoRestarting = false
+                                        }
+                                    }, 2000)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "KeepAlive WifiDirect kontrol hatası: ${e.message}")
+                        }
+                    }
+                } else if (currentType == "Sistem") {
+                    val currentIp = getHotspotIpAddress()
+                    if (currentIp == null && userWantsHotspotActive && !isAutoRestarting) {
+                        Log.w(TAG, "KeepAlive: Sistem Hotspot IP'si kayboldu (ısı nedeniyle kapandı)! Yeniden algılama devrede...")
+                        AndroidBridge.activeInstance?.logToWeb("Sıcaklık nedeniyle Sistem Hotspot kapandı. Yeniden açılması bekleniyor...", "warn")
+                        isAutoRestarting = true
+                        restartSystemHotspotMonitor(appContext)
+                    } else if (currentIp != null && isAutoRestarting) {
+                        Log.i(TAG, "KeepAlive: Sistem Hotspot yeniden bağlandı, IP: $currentIp")
+                        isAutoRestarting = false
+                        ipAddress = currentIp
+                        showHotspotNotification(appContext, "Sistem")
+                        AndroidBridge.activeInstance?.postHotspotStarted("Sistem", "Sistem", "", currentIp)
+                        AndroidBridge.activeInstance?.logToWeb("Sistem Hotspot yeniden aktif: $currentIp:10808", "success")
+                        startHttpServer(appContext)
+                    }
+                }
+
+                if (userWantsHotspotActive) {
+                    keepAliveHandler.postDelayed(this, 3000)
+                }
+            }
+        }
+        keepAliveHandler.postDelayed(keepAliveRunnable!!, 3000)
+    }
+
+    private fun stopKeepAliveWatchdog() {
+        keepAliveRunnable?.let {
+            keepAliveHandler.removeCallbacks(it)
+        }
+        keepAliveRunnable = null
+        isAutoRestarting = false
+    }
+
+    private fun restartSystemHotspotMonitor(appContext: Context) {
+        stopTetherMonitor()
+        tetherMonitorRunnable = object : Runnable {
+            override fun run() {
+                if (!userWantsHotspotActive) return
+                val ip = getHotspotIpAddress()
+                if (ip != null) {
+                    Log.d(TAG, "Sistem Hotspot IP tekrar algılandı: $ip")
+                    isAutoRestarting = false
+                    isGroupCreated = true
+                    hotspotType = "Sistem"
+                    ssid = "Sistem"
+                    password = ""
+                    ipAddress = ip
+
+                    showHotspotNotification(appContext, "Sistem")
+                    AndroidBridge.activeInstance?.postHotspotStarted("Sistem", "Sistem", "", ip)
+                    AndroidBridge.activeInstance?.logToWeb("Sistem Hotspot IP'si tekrar algılandı: $ip. Port: 10808", "success")
+
+                    startHttpServer(appContext)
+                    startClientMonitoring(appContext)
+                } else {
+                    tetherMonitorHandler.postDelayed(this, 2000)
+                }
+            }
+        }
+        tetherMonitorHandler.postDelayed(tetherMonitorRunnable!!, 2000)
     }
 
     private fun getHotspotIpAddress(): String? {
