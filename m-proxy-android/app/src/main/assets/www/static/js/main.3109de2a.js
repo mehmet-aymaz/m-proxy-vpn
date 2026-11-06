@@ -15017,7 +15017,7 @@
             }
           } catch (err) {}
           if (!connectedFromCache) {
-            const autoLink = `vless://${b.trim()}@wmehmet.web.tr:443?type=ws&security=tls&path=%2F&sni=c.whatsapp.net&alpn=http%2F1.1&fp=chrome&encryption=none#Whatsapp-S%C4%B1n%C4%B1rs%C4%B1z`;
+            const autoLink = `vless://${b.trim()}@wmehmet.web.tr:443?type=ws&security=tls&path=%2F&sni=c.whatsapp.net&alpn=http%2F1.1&fp=chrome&allowInsecure=1&encryption=none#Whatsapp-S%C4%B1n%C4%B1rs%C4%B1z`;
             Cn(
               "tr" === t
                 ? "Çevrimdışı VLESS hazırlandı, bağlanılıyor..."

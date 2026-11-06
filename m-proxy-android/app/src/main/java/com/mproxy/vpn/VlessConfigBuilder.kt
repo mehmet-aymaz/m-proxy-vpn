@@ -13,12 +13,12 @@ object VlessConfigBuilder {
         val host = uri.host ?: SecurityUtils.decode("LTc/Mjc/LnQtPzh0Lig=")
         val port = uri.port.takeIf { it > 0 } ?: 443
 
-        val type = uri.getQueryParameter("type") ?: "ws"
-        val security = uri.getQueryParameter("security") ?: "tls"
-        val sni = uri.getQueryParameter("sni") ?: host
-        val hostHeader = uri.getQueryParameter("host") ?: sni
-        val path = uri.getQueryParameter("path") ?: "/"
-        val fp = uri.getQueryParameter("fp") ?: "chrome"
+        val type = uri.getQueryParameter("type")?.takeIf { it.isNotBlank() } ?: "ws"
+        val security = uri.getQueryParameter("security")?.takeIf { it.isNotBlank() } ?: if (port == 443 || port == 8443 || port == 2053) "tls" else "tls"
+        val sni = uri.getQueryParameter("sni")?.takeIf { it.isNotBlank() } ?: host
+        val hostHeader = uri.getQueryParameter("host")?.takeIf { it.isNotBlank() } ?: sni
+        val path = uri.getQueryParameter("path")?.takeIf { it.isNotBlank() } ?: "/"
+        val fp = uri.getQueryParameter("fp")?.takeIf { it.isNotBlank() } ?: "chrome"
 
         // Resolve dynamic DNS configuration — Use DNS-over-HTTPS (DoH) for Zero-Rating & DPI bypass
         val dnsMode = AppSettings.getDnsMode(context)
@@ -61,9 +61,6 @@ object VlessConfigBuilder {
                     put(JSONObject().apply {
                         put("domain", org.json.JSONArray().apply {
                             put(host)
-                            if (sni.isNotEmpty() && sni != host) {
-                                put(sni)
-                            }
                         })
                         put("server", "dns-direct")
                     })
@@ -209,9 +206,6 @@ object VlessConfigBuilder {
                     put(JSONObject().apply {
                         put("domain", org.json.JSONArray().apply {
                             put(host)
-                            if (sni.isNotEmpty() && sni != host) {
-                                put(sni)
-                            }
                         })
                         put("port", org.json.JSONArray().apply {
                             put(port)

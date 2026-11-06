@@ -321,6 +321,7 @@ class WebServerHandler(BaseHTTPRequestHandler):
             fp = tls_s.get("settings", {}).get("fingerprint") or tls_s.get("fingerprint")
             if fp:
                 p["fp"] = fp
+            p["allowInsecure"] = "1"
 
         if net_type == "ws":
             ws_s = stream.get("wsSettings", {})
