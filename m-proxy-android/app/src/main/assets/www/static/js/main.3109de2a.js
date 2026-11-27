@@ -13553,6 +13553,29 @@
       ],
     });
   }
+  function ChatGPTIcon(e) {
+    let t = e.size,
+      n = void 0 === t ? 32 : t;
+    return (0, $.jsxs)("svg", {
+      width: n,
+      height: n,
+      viewBox: "0 0 48 48",
+      fill: "none",
+      xmlns: "http://www.w3.org/2000/svg",
+      children: [
+        (0, $.jsx)("rect", {
+          width: "48",
+          height: "48",
+          rx: "12",
+          fill: "#10A37F",
+        }),
+        (0, $.jsx)("path", {
+          d: "M35.6 21.4a6.4 6.4 0 0 0-.55-5.26 6.48 6.48 0 0 0-6.98-3.11A6.47 6.47 0 0 0 17 15.2a6.47 6.47 0 0 0-4.32 3.14 6.48 6.48 0 0 0 .8 7.59 6.4 6.4 0 0 0 .55 5.26 6.48 6.48 0 0 0 6.98 3.11A6.47 6.47 0 0 0 32.08 32a6.47 6.47 0 0 0 4.32-3.14 6.48 6.48 0 0 0-.8-7.46zM25.88 35.1a4.8 4.8 0 0 1-3.09-1.12l.15-.09 5.13-2.96a.83.83 0 0 0 .42-.72v-7.23l2.17 1.25a.08.08 0 0 1 .04.06v5.99a4.83 4.83 0 0 1-4.82 4.82zM15.52 30.68a4.8 4.8 0 0 1-.57-3.23l.15.09 5.13 2.96a.83.83 0 0 0 .83 0l6.26-3.61v2.5a.08.08 0 0 1-.03.07l-5.19 3a4.83 4.83 0 0 1-6.58-1.78zm-1.35-11.17a4.8 4.8 0 0 1 2.51-2.11v6.1a.83.83 0 0 0 .42.72l6.25 3.61-2.17 1.25a.08.08 0 0 1-.07 0l-5.18-2.99a4.83 4.83 0 0 1-1.76-6.58zm17.8 4.14-6.26-3.61 2.17-1.25a.08.08 0 0 1 .07 0l5.18 2.99a4.82 4.82 0 0 1-.75 8.7v-6.1a.83.83 0 0 0-.41-.73zm2.16-3.25-.15-.09-5.13-2.96a.83.83 0 0 0-.83 0l-6.26 3.61v-2.5a.08.08 0 0 1 .03-.07l5.19-3a4.82 4.82 0 0 1 7.15 5.01zm-13.57 4.46-2.17-1.25a.08.08 0 0 1-.04-.06v-5.99a4.82 4.82 0 0 1 7.91-3.7l-.15.09-5.13 2.96a.83.83 0 0 0-.42.72v7.23zm1.18-2.54 2.79-1.61 2.79 1.61v3.22l-2.79 1.61-2.79-1.61v-3.22z",
+          fill: "white",
+        }),
+      ],
+    });
+  }
   function G(e) {
     let t = e.size,
       n = void 0 === t ? 13 : t,
@@ -13660,6 +13683,18 @@
         path: "/",
         IconComponent: q,
         color: "#25D366",
+      },
+      2083: {
+        id: 5,
+        name: "CHATGPT SINIRSIZ PAKET",
+        shortName: "CHATGPT",
+        domain: ee,
+        port: 2083,
+        sni: "chatgpt.com",
+        host: "chatgpt.com",
+        path: "/",
+        IconComponent: ChatGPTIcon,
+        color: "#10A37F",
       },
     },
     ne = {
@@ -14472,8 +14507,13 @@
                         (r = "TIKTOK"),
                         (a = Y),
                         (l = "#00f2fe"))
-                      : t.includes("telegram") &&
-                        ((r = "TELEGRAM"), (l = "#0088cc"));
+                      : (t.includes("chatgpt") || t.includes("gpt"))
+                        ? ((n = "CHATGPT SINIRSIZ PAKET"),
+                          (r = "CHATGPT"),
+                          (a = ChatGPTIcon),
+                          (l = "#10A37F"))
+                        : t.includes("telegram") &&
+                          ((r = "TELEGRAM"), (l = "#0088cc"));
               
               let finalLink = e.link;
               const isMpanel = e.port === 1453 || (finalLink && (finalLink.includes("mehmetaymaz.com.tr") || finalLink.includes("mehmetaymaz.com.tr") || finalLink.includes("185.254.28.210")));
@@ -14704,8 +14744,13 @@
                             (r = "TIKTOK"),
                             (a = Y),
                             (l = "#00f2fe"))
-                          : t.includes("telegram") &&
-                            ((r = "TELEGRAM"), (l = "#0088cc"));
+                          : (t.includes("chatgpt") || t.includes("gpt"))
+                            ? ((n = "CHATGPT SINIRSIZ PAKET"),
+                              (r = "CHATGPT"),
+                              (a = ChatGPTIcon),
+                              (l = "#10A37F"))
+                            : t.includes("telegram") &&
+                              ((r = "TELEGRAM"), (l = "#0088cc"));
                   
                   const baseProfile = te[e.port] || {};
                   return {
@@ -14789,6 +14834,7 @@
           { port: 8080, host: ee },
           { port: 1905, host: ee },
           { port: 1453, host: "mehmetaymaz.com.tr" },
+          { port: 2083, host: ee },
         ];
         e.forEach((e) => ce("pingServer", e.host, e.port));
         const t = setInterval(() => {
@@ -16820,6 +16866,11 @@
                                                 shortName = "TIKTOK";
                                                 IconComponent = Y;
                                                 color = "#00f2fe";
+                                              } else if (remarkLower.includes("chatgpt") || remarkLower.includes("gpt")) {
+                                                name = "CHATGPT SINIRSIZ PAKET";
+                                                shortName = "CHATGPT";
+                                                IconComponent = ChatGPTIcon;
+                                                color = "#10A37F";
                                               } else if (remarkLower.includes("telegram")) {
                                                 shortName = "TELEGRAM";
                                                 color = "#0088cc";

@@ -14,7 +14,7 @@ object VlessConfigBuilder {
         val port = uri.port.takeIf { it > 0 } ?: 443
 
         val type = uri.getQueryParameter("type")?.takeIf { it.isNotBlank() } ?: "ws"
-        val security = uri.getQueryParameter("security")?.takeIf { it.isNotBlank() } ?: if (port == 443 || port == 8443 || port == 2053) "tls" else "tls"
+        val security = uri.getQueryParameter("security")?.takeIf { it.isNotBlank() } ?: "tls"
         val sni = uri.getQueryParameter("sni")?.takeIf { it.isNotBlank() } ?: host
         val hostHeader = uri.getQueryParameter("host")?.takeIf { it.isNotBlank() } ?: sni
         val path = uri.getQueryParameter("path")?.takeIf { it.isNotBlank() } ?: "/"
@@ -122,54 +122,66 @@ object VlessConfigBuilder {
                     put("uuid", uuid)
                     put("tcp_fast_open", true)
 
-                    val flow = uri.getQueryParameter("flow")
+                    val flow = uri.getQueryParameter("flow")?.takeIf { it.isNotBlank() }
                     if (!flow.isNullOrEmpty() && type != "ws" && type != "grpc") {
                         put("flow", flow)
+                    } else if (security == "reality" && type == "tcp") {
+                        put("flow", "xtls-rprx-vision")
                     }
+                    put("packet_encoding", "xudp")
 
-                    // Transport
-                    put("transport", JSONObject().apply {
-                        put("type", type)
-                        if (type == "ws") {
-                            put("path", path)
-                            put("headers", JSONObject().apply {
-                                put("Host", hostHeader)
-                            })
-                        } else if (type == "grpc") {
-                            put("service_name", uri.getQueryParameter("serviceName") ?: "")
-                        }
-                    })
+                    // Transport (only needed for non-raw-TCP transports like ws/grpc/httpupgrade)
+                    if (type != "tcp") {
+                        put("transport", JSONObject().apply {
+                            put("type", type)
+                            if (type == "ws") {
+                                put("path", path)
+                                put("headers", JSONObject().apply {
+                                    put("Host", hostHeader)
+                                })
+                            } else if (type == "grpc") {
+                                put("service_name", uri.getQueryParameter("serviceName") ?: "")
+                            } else if (type == "httpupgrade") {
+                                put("path", path)
+                                put("host", hostHeader)
+                            }
+                        })
+                    }
 
                     // TLS / Reality with uTLS
                     if (security == "tls" || security == "xtls" || security == "reality") {
                         put("tls", JSONObject().apply {
                             put("enabled", true)
                             put("server_name", sni)
-                            put("insecure", true)
-                            
-                            val alpnParam = uri.getQueryParameter("alpn")
-                            val alpnList = if (!alpnParam.isNullOrEmpty()) {
-                                alpnParam.split(",").map { it.trim() }
-                            } else {
-                                listOf("http/1.1")
+                            if (security != "reality") {
+                                put("insecure", true)
                             }
-                            put("alpn", org.json.JSONArray().apply {
-                                alpnList.forEach { put(it) }
-                            })
-                            
-                            val fpParam = uri.getQueryParameter("fp") ?: fp
+
+                            val alpnParam = uri.getQueryParameter("alpn")
+                            if (!alpnParam.isNullOrBlank()) {
+                                val alpnList = alpnParam.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                                if (alpnList.isNotEmpty()) {
+                                    put("alpn", org.json.JSONArray().apply {
+                                        alpnList.forEach { put(it) }
+                                    })
+                                }
+                            } else if (security != "reality") {
+                                put("alpn", org.json.JSONArray().apply {
+                                    put("http/1.1")
+                                })
+                            }
+
+                            val fpParam = uri.getQueryParameter("fp")?.takeIf { it.isNotBlank() } ?: fp
                             put("utls", JSONObject().apply {
                                 put("enabled", true)
                                 put("fingerprint", fpParam)
                             })
-                            
+
                             if (security == "reality") {
                                 put("reality", JSONObject().apply {
                                     put("enabled", true)
                                     put("public_key", uri.getQueryParameter("pbk") ?: "")
                                     put("short_id", uri.getQueryParameter("sid") ?: "")
-                                    put("flow", flow ?: "xtls-rprx-vision")
-                                    put("packet_encoding", "xudp")
                                 })
                             }
                         })

@@ -224,6 +224,7 @@ class MProxyWidgetProvider : AppWidgetProvider() {
                 r.contains("youtube") || r.contains("yt") -> 0xFFFF0000.toInt()
                 r.contains("instagram") || r.contains("ig") -> 0xFFE1306C.toInt()
                 r.contains("tiktok") || r.contains("tt") -> 0xFF00F2FE.toInt()
+                r.contains("chatgpt") || r.contains("gpt") -> 0xFF10A37F.toInt()
                 else -> 0xFF00E5FF.toInt()
             }
         }

@@ -117,6 +117,7 @@ class MProxyVpnService : VpnService() {
             r.contains("youtube") || r.contains("yt") -> "#FF0000"
             r.contains("instagram") || r.contains("ig") -> "#E1306C"
             r.contains("tiktok") || r.contains("tt") -> "#00F2FE"
+            r.contains("chatgpt") || r.contains("gpt") -> "#10A37F"
             else -> "#00E5FF"
         }
     }
